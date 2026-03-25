@@ -24,26 +24,35 @@ export function useRestaurants(): UseRestaurantsReturn {
       return;
     }
 
-    const placeId = extractPlaceId(url);
-    if (!placeId) {
-      setError('URL에서 음식점 정보를 찾을 수 없습니다.');
-      return;
-    }
-
-    // Check for duplicates
-    if (restaurants.some((r) => r.id === placeId)) {
+    // Try to extract place ID client-side first (for duplicate check)
+    const clientPlaceId = extractPlaceId(url);
+    if (clientPlaceId && restaurants.some((r) => r.id === clientPlaceId)) {
       setError('이미 추가된 음식점입니다.');
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/place?id=${placeId}`);
+      // Build the API URL: use place ID if available, otherwise send raw URL for server-side resolution
+      const apiUrl = clientPlaceId
+        ? `/api/place?id=${clientPlaceId}`
+        : `/api/place?url=${encodeURIComponent(url)}`;
+
+      const response = await fetch(apiUrl);
       if (!response.ok) {
-        throw new Error('음식점 정보를 가져올 수 없습니다.');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || '음식점 정보를 가져올 수 없습니다.');
       }
 
       const data = await response.json();
+      const placeId = data.id || clientPlaceId || url;
+
+      // Check for duplicates again with the resolved ID
+      if (restaurants.some((r) => r.id === placeId)) {
+        setError('이미 추가된 음식점입니다.');
+        return;
+      }
+
       const restaurant: Restaurant = {
         id: placeId,
         name: data.name,

@@ -32,4 +32,14 @@ Each entry follows this structure:
 
 ---
 
+### 2026-03-26 — Naver Share URL (naver.me) Not Recognized
+
+**What We Tried**: Users paste URLs from Naver Map's "공유하기" (share) button, which produces shortened URLs like `https://naver.me/FY3WJyBA`. Our client-side parser only matched `/place/(\d+)` patterns.
+
+**Result**: Error "URL에서 음식점 정보를 찾을 수 없습니다." — the shortened URL contains no place ID.
+
+**Lesson Learned**: The Naver share button produces `naver.me` short URLs that redirect to the full URL containing the place ID. Fix: send the raw URL to the backend (`api/place.ts`), which follows redirects server-side to resolve the short URL, then extracts the place ID from the resolved URL. The frontend now supports both: direct place ID extraction (for full URLs) and server-side resolution (for `naver.me` short URLs). Always test with the actual URL users will copy — don't assume URL format.
+
+---
+
 *More entries will be added as development progresses.*

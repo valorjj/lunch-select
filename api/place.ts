@@ -1,13 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-interface NaverMenuItem {
-  name: string;
-  price: string;
-  description?: string;
-  images?: string[];
-}
-
 interface NaverPlaceData {
+  id: string;
   name: string;
   category: string;
   menuItems: { name: string; price: number | null; description?: string; images?: string[] }[];
@@ -20,14 +14,20 @@ interface NaverPlaceData {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { id } = req.query;
+  let placeId = typeof req.query.id === 'string' ? req.query.id : null;
+  const rawUrl = typeof req.query.url === 'string' ? req.query.url : null;
 
-  if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Missing place ID parameter' });
+  // If no direct ID, try to resolve from URL
+  if (!placeId && rawUrl) {
+    placeId = await resolveUrlToPlaceId(rawUrl);
+  }
+
+  if (!placeId) {
+    return res.status(400).json({ error: 'Could not extract place ID from the provided URL or parameters' });
   }
 
   try {
-    const data = await fetchPlaceData(id);
+    const data = await fetchPlaceData(placeId);
     return res.status(200).json(data);
   } catch (error: any) {
     console.error('Place API error:', error.message);
@@ -35,8 +35,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+async function resolveUrlToPlaceId(url: string): Promise<string | null> {
+  // First, try to extract directly from the URL
+  const directId = extractPlaceIdFromUrl(url);
+  if (directId) return directId;
+
+  // If it's a shortened URL (naver.me), follow redirects to get the real URL
+  if (url.includes('naver.me')) {
+    try {
+      const response = await fetch(url, {
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      });
+      const resolvedUrl = response.url;
+      console.log('Resolved short URL:', url, '->', resolvedUrl);
+      return extractPlaceIdFromUrl(resolvedUrl);
+    } catch (err: any) {
+      console.error('Failed to resolve short URL:', err.message);
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function extractPlaceIdFromUrl(url: string): string | null {
+  // Pattern: /place/1234567890
+  const placeMatch = url.match(/place\/(\d+)/);
+  if (placeMatch) return placeMatch[1];
+
+  // Pattern: /restaurant/1234567890
+  const restaurantMatch = url.match(/restaurant\/(\d+)/);
+  if (restaurantMatch) return restaurantMatch[1];
+
+  return null;
+}
+
 async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
-  // Try the internal API first
   const response = await fetch(
     `https://pcmap.place.naver.com/restaurant/${placeId}/home`,
     {
@@ -100,6 +137,7 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
   }));
 
   return {
+    id: placeId,
     name,
     category,
     menuItems,
