@@ -1,0 +1,31 @@
+.naver-map {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+  &__container {
+    width: 100%;
+    height: 350px;
+  }
+}
+
+// Custom marker style (injected as HTML into naver maps)
+:global(.naver-map-marker) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 40px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  span {
+    transform: rotate(45deg);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}

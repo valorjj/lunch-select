@@ -1,0 +1,37 @@
+:root {
+  --color-primary: #FF6B35;
+  --color-primary-rgb: 255, 107, 53;
+  --color-primary-dark: #E55A28;
+  --color-accent: #FF8F5E;
+  --color-background: #FAFAFA;
+  --color-surface: #FFFFFF;
+  --color-text: #1A1A2E;
+  --color-text-muted: #8B8BA3;
+  --color-border: #EDEDF0;
+  --color-error: #E53E3E;
+  --color-error-rgb: 229, 62, 62;
+  --color-success: #38A169;
+  --color-success-rgb: 56, 161, 105;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-background);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
