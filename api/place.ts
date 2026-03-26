@@ -76,6 +76,8 @@ function extractPlaceIdFromUrl(url: string): string | null {
 }
 
 async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
+  console.log('[place] fetching placeId:', placeId);
+
   const response = await fetch(
     `https://pcmap.place.naver.com/restaurant/${placeId}/home`,
     {
@@ -87,16 +89,19 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
     }
   );
 
+  console.log('[place] naver response status:', response.status);
+
   if (!response.ok) {
     throw new Error(`Naver place fetch failed: ${response.status}`);
   }
 
   const html = await response.text();
+  console.log('[place] html length:', html.length);
 
   // Naver Place uses Apollo Client — data is in window.__APOLLO_STATE__
   const apolloStart = html.indexOf('window.__APOLLO_STATE__');
   if (apolloStart === -1) {
-    throw new Error('Could not find __APOLLO_STATE__ in page');
+    throw new Error('Could not find __APOLLO_STATE__ in page. HTML preview: ' + html.substring(0, 500));
   }
   const jsonStart = html.indexOf('{', apolloStart);
   // Find the matching closing brace by tracking depth
@@ -110,7 +115,10 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
       break;
     }
   }
-  const apolloState = JSON.parse(html.slice(jsonStart, jsonEnd));
+  const jsonStr = html.slice(jsonStart, jsonEnd);
+  console.log('[place] JSON length:', jsonStr.length);
+  const apolloState = JSON.parse(jsonStr);
+  console.log('[place] parsed OK, keys:', Object.keys(apolloState).length);
 
   // Main place info is in PlaceDetailBase:{placeId}
   const place = apolloState[`PlaceDetailBase:${placeId}`];
