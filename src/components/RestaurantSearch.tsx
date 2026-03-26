@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SearchResult } from '../types/restaurant';
 import './RestaurantSearch.scss';
 
@@ -19,38 +19,32 @@ export function RestaurantSearch({ onSelect, disabled }: RestaurantSearchProps) 
   const [hasSearched, setHasSearched] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Debounced search
-  useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      setShowDropdown(false);
-      setHasSearched(false);
+  const doSearch = useCallback(async () => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setError('검색어를 2글자 이상 입력해주세요.');
       return;
     }
 
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      setError(null);
-      try {
-        const response = await fetch(`${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(query.trim())}`);
-        if (!response.ok) {
-          throw new Error('검색에 실패했습니다.');
-        }
-        const data: SearchResult[] = await response.json();
-        setResults(data);
-        setShowDropdown(true);
-        setHasSearched(true);
-      } catch (err: any) {
-        setError(err.message || '검색 중 오류가 발생했습니다.');
-        setResults([]);
-        setShowDropdown(true);
-        setHasSearched(true);
-      } finally {
-        setIsSearching(false);
+    setIsSearching(true);
+    setError(null);
+    try {
+      const response = await fetch(`${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) {
+        throw new Error('검색에 실패했습니다.');
       }
-    }, 300);
-
-    return () => clearTimeout(timer);
+      const data: SearchResult[] = await response.json();
+      setResults(data);
+      setShowDropdown(true);
+      setHasSearched(true);
+    } catch (err: any) {
+      setError(err.message || '검색 중 오류가 발생했습니다.');
+      setResults([]);
+      setShowDropdown(true);
+      setHasSearched(true);
+    } finally {
+      setIsSearching(false);
+    }
   }, [query]);
 
   // Close dropdown on outside click
@@ -72,6 +66,13 @@ export function RestaurantSearch({ onSelect, disabled }: RestaurantSearchProps) 
     setHasSearched(false);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isSearching && !disabled) {
+      doSearch();
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       setShowDropdown(false);
@@ -80,7 +81,7 @@ export function RestaurantSearch({ onSelect, disabled }: RestaurantSearchProps) 
 
   return (
     <div className="restaurant-search" ref={wrapperRef}>
-      <div className="restaurant-search__input-wrapper">
+      <form className="restaurant-search__form" onSubmit={handleSubmit}>
         <input
           type="text"
           className="restaurant-search__field"
@@ -89,10 +90,16 @@ export function RestaurantSearch({ onSelect, disabled }: RestaurantSearchProps) 
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setShowDropdown(true)}
           onKeyDown={handleKeyDown}
-          disabled={disabled}
+          disabled={disabled || isSearching}
         />
-        {isSearching && <span className="restaurant-search__spinner" />}
-      </div>
+        <button
+          type="submit"
+          className="restaurant-search__button"
+          disabled={!query.trim() || isSearching || disabled}
+        >
+          {isSearching ? <span className="restaurant-search__spinner" /> : '검색'}
+        </button>
+      </form>
 
       {showDropdown && (
         <div className="restaurant-search__dropdown">
