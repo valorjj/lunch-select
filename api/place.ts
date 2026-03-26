@@ -15,7 +15,7 @@ interface NaverPlaceData {
 
 // In-memory cache to avoid 429 rate limits from Naver Place scraping
 const cache = new Map<string, { data: NaverPlaceData; timestamp: number }>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function getCached(placeId: string): NaverPlaceData | null {
   const entry = cache.get(placeId);
