@@ -31,10 +31,17 @@ export function ResultScreen({
   onStartOver,
   onUpdateStartingPoint,
 }: ResultScreenProps) {
-  const { directions, isLoading: directionsLoading } = useDirections(
-    startingPoint,
-    { lat: winner.lat, lng: winner.lng }
+  const goal = useMemo(
+    () => ({ lat: winner.lat, lng: winner.lng }),
+    [winner.lat, winner.lng]
   );
+
+  const start = useMemo(
+    () => ({ lat: startingPoint.lat, lng: startingPoint.lng }),
+    [startingPoint.lat, startingPoint.lng]
+  );
+
+  const { directions, isLoading: directionsLoading } = useDirections(start, goal);
 
   const mapCenter = useMemo(
     () => ({
