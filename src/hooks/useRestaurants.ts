@@ -2,6 +2,23 @@ import { useState, useCallback } from 'react';
 import { Restaurant } from '../types/restaurant';
 import { extractPlaceId, isNaverMapUrl } from '../utils/parseNaverUrl';
 
+const STORAGE_KEY = 'lunch-select-restaurants';
+
+function loadSaved(): Restaurant[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(restaurants: Restaurant[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(restaurants));
+  } catch { /* ignore quota errors */ }
+}
+
 interface UseRestaurantsReturn {
   restaurants: Restaurant[];
   isLoading: boolean;
@@ -12,7 +29,7 @@ interface UseRestaurantsReturn {
 }
 
 export function useRestaurants(): UseRestaurantsReturn {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(loadSaved);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +84,11 @@ export function useRestaurants(): UseRestaurantsReturn {
         naverMapUrl: url,
       };
 
-      setRestaurants((prev) => [...prev, restaurant]);
+      setRestaurants((prev) => {
+        const next = [...prev, restaurant];
+        saveToStorage(next);
+        return next;
+      });
     } catch (err: any) {
       setError(err.message || '음식점 정보를 가져오는 중 오류가 발생했습니다.');
     } finally {
@@ -76,11 +97,16 @@ export function useRestaurants(): UseRestaurantsReturn {
   }, [restaurants]);
 
   const removeRestaurant = useCallback((id: string) => {
-    setRestaurants((prev) => prev.filter((r) => r.id !== id));
+    setRestaurants((prev) => {
+      const next = prev.filter((r) => r.id !== id);
+      saveToStorage(next);
+      return next;
+    });
   }, []);
 
   const clearAll = useCallback(() => {
     setRestaurants([]);
+    saveToStorage([]);
     setError(null);
   }, []);
 

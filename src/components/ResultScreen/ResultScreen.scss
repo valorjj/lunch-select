@@ -101,6 +101,21 @@
     }
   }
 
+  &__naver-link {
+    display: block;
+    text-align: center;
+    padding: 0.75rem 1.5rem;
+    background: #1EC800;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+
+    &:hover { opacity: 0.9; }
+  }
+
   &__directions-info {
     display: flex;
     gap: 1rem;

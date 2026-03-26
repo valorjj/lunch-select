@@ -97,6 +97,16 @@ export function ResultScreen({
         </div>
       </div>
 
+      {/* Naver Map navigation link */}
+      <a
+        className="result-screen__naver-link"
+        href={`https://map.naver.com/p/directions/${startingPoint.lng},${startingPoint.lat},${encodeURIComponent(startingPoint.name)}/${winner.lng},${winner.lat},${encodeURIComponent(winner.name)}/-/walk?c=15,0,0,0,dh`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        네이버 지도에서 길찾기
+      </a>
+
       {/* Directions summary */}
       {directions && (
         <div className="result-screen__directions-info">
