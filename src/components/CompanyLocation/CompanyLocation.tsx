@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { SavedLocation } from '../../hooks/useCompanyLocation';
-import { apiFetch } from '../../utils/api';
 import './CompanyLocation.scss';
 
 interface CompanyLocationProps {
@@ -16,9 +15,13 @@ export function CompanyLocation({ location, savedLocations, onUpdate, onSave, on
   const [address, setAddress] = useState('');
   const [saveName, setSaveName] = useState('');
   const [geocoding, setGeocoding] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showSaveForm, setShowSaveForm] = useState(false);
 
   const handleGpsClick = useCallback(async () => {
+    setGpsLoading(true);
+    setError(null);
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
@@ -29,15 +32,19 @@ export function CompanyLocation({ location, savedLocations, onUpdate, onSave, on
         name: '현재 위치',
       });
     } catch {
-      // GPS failed silently
+      setError('위치를 가져올 수 없습니다.');
+    } finally {
+      setGpsLoading(false);
     }
   }, [onUpdate]);
 
   const handleAddressSearch = useCallback(async () => {
     if (!address.trim()) return;
     setGeocoding(true);
+    setError(null);
     try {
-      const response = await apiFetch(`/api/geocode?query=${encodeURIComponent(address.trim())}`);
+      // Use Vercel function directly (not apiFetch which routes to Spring Boot)
+      const response = await fetch(`/api/geocode?query=${encodeURIComponent(address.trim())}`);
       if (!response.ok) throw new Error();
       const data = await response.json();
       onUpdate({
@@ -47,7 +54,7 @@ export function CompanyLocation({ location, savedLocations, onUpdate, onSave, on
       });
       setAddress('');
     } catch {
-      // silently fail
+      setError('주소를 찾을 수 없습니다.');
     } finally {
       setGeocoding(false);
     }
@@ -102,15 +109,19 @@ export function CompanyLocation({ location, savedLocations, onUpdate, onSave, on
             </div>
           )}
 
-          <button className="company-location__option" onClick={handleGpsClick}>
-            현재 위치 사용
+          <button
+            className="company-location__option"
+            onClick={handleGpsClick}
+            disabled={gpsLoading}
+          >
+            {gpsLoading ? '위치 찾는 중...' : '현재 위치 사용'}
           </button>
 
           <div className="company-location__manual">
             <input
               type="text"
               className="company-location__input"
-              placeholder="주소를 입력하세요"
+              placeholder="주소 또는 장소명을 입력하세요 (예: 역삼역)"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddressSearch()}
@@ -123,6 +134,16 @@ export function CompanyLocation({ location, savedLocations, onUpdate, onSave, on
               {geocoding ? '...' : '검색'}
             </button>
           </div>
+
+          {error && (
+            <div className="company-location__error">{error}</div>
+          )}
+
+          {location.lat !== 0 && (
+            <div className="company-location__info">
+              {location.name} ({location.lat.toFixed(4)}, {location.lng.toFixed(4)})
+            </div>
+          )}
 
           {!showSaveForm ? (
             <button
