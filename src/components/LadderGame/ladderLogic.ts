@@ -20,10 +20,10 @@ export function generateLadder(columns: number, rowCount: number): Ladder {
     }
   }
 
-  // Ensure every column has at least one rung connected to it
-  // This prevents "straight down" paths which are boring
+  // Ensure every gap between adjacent columns has at least one rung
+  // This prevents any column from being completely isolated
   for (let col = 0; col < columns - 1; col++) {
-    const hasRung = rungs.some((r) => r.leftCol === col || r.leftCol === col - 1);
+    const hasRung = rungs.some((r) => r.leftCol === col);
     if (!hasRung) {
       const row = Math.floor(Math.random() * rowCount);
       rungs.push({ row, leftCol: col });
