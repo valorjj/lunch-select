@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Restaurant, MenuItem } from '../../types/restaurant';
-import { NaverMap } from '../NaverMap/NaverMap';
-import { StartingPoint } from '../StartingPoint/StartingPoint';
-import { ErrorBoundary } from '../ErrorBoundary';
 import { SharePanel } from '../SharePanel/SharePanel';
-import { useDirections, formatDistance, formatDuration } from '../../hooks/useDirections';
+// TODO: Re-enable when NCP API issues are resolved
+// import { NaverMap } from '../NaverMap/NaverMap';
+// import { StartingPoint } from '../StartingPoint/StartingPoint';
+// import { ErrorBoundary } from '../ErrorBoundary';
+// import { useDirections, formatDistance, formatDuration } from '../../hooks/useDirections';
 import './ResultScreen.scss';
 
 interface StartingPointData {
@@ -35,42 +36,9 @@ export function ResultScreen({
   onStartOver,
   onUpdateStartingPoint,
 }: ResultScreenProps) {
-  const [showDirections, setShowDirections] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(winner.menuItems || []);
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
-
-  const goal = useMemo(
-    () => ({ lat: winner.lat, lng: winner.lng }),
-    [winner.lat, winner.lng]
-  );
-
-  const start = useMemo(
-    () => ({ lat: startingPoint.lat, lng: startingPoint.lng }),
-    [startingPoint.lat, startingPoint.lng]
-  );
-
-  // Only fetch directions when the section is expanded
-  const { directions, isLoading: directionsLoading, error: directionsError } = useDirections(
-    showDirections ? start : null,
-    showDirections ? goal : null
-  );
-
-  const mapCenter = useMemo(
-    () => ({
-      lat: (startingPoint.lat + winner.lat) / 2,
-      lng: (startingPoint.lng + winner.lng) / 2,
-    }),
-    [startingPoint, winner]
-  );
-
-  const markers = useMemo(
-    () => [
-      { lat: startingPoint.lat, lng: startingPoint.lng, label: '출', color: '#3B82F6' },
-      { lat: winner.lat, lng: winner.lng, label: '도', color: '#FF6B35' },
-    ],
-    [startingPoint, winner]
-  );
 
   // Fetch menu data when winner is selected and has no menu items
   const fetchMenu = useCallback(async () => {
@@ -166,88 +134,7 @@ export function ResultScreen({
         )}
       </div>
 
-      {/* Naver Map link — always visible */}
-      <a
-        className="result-screen__naver-link"
-        href={`https://map.naver.com/p/directions/${startingPoint.lng},${startingPoint.lat},${encodeURIComponent(startingPoint.name)},,/${winner.lng},${winner.lat},${encodeURIComponent(winner.name)},,/-/walk?c=15.00,0,0,0,dh`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        네이버 지도에서 길찾기 (도보)
-      </a>
-
-      {/* Collapsible directions/map section */}
-      <details className="result-screen__details" onToggle={(e) => setShowDirections((e.target as HTMLDetailsElement).open)}>
-        <summary className="result-screen__details-summary">
-          경로 및 지도 보기
-        </summary>
-
-        <div className="result-screen__details-content">
-          {/* Directions summary */}
-          {directions && (
-            <div className="result-screen__directions-info">
-              <div className="result-screen__directions-item">
-                <span className="result-screen__directions-label">거리</span>
-                <span className="result-screen__directions-value">
-                  {formatDistance(directions.summary.distance)}
-                </span>
-              </div>
-              <div className="result-screen__directions-item">
-                <span className="result-screen__directions-label">예상 시간 (자동차)</span>
-                <span className="result-screen__directions-value">
-                  {formatDuration(directions.summary.duration)}
-                </span>
-              </div>
-              {directions.summary.taxiFare > 0 && (
-                <div className="result-screen__directions-item">
-                  <span className="result-screen__directions-label">택시비</span>
-                  <span className="result-screen__directions-value">
-                    {new Intl.NumberFormat('ko-KR').format(directions.summary.taxiFare)}원
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {directionsLoading && (
-            <div className="result-screen__loading">경로를 찾는 중...</div>
-          )}
-
-          {directionsError && !directionsLoading && (
-            <div className="result-screen__directions-error">
-              <p>경로 정보를 가져오지 못했어요</p>
-              <p className="result-screen__directions-error-hint">
-                네이버 지도에서 직접 검색해보세요
-              </p>
-            </div>
-          )}
-
-          {/* Starting point config */}
-          <StartingPoint
-            currentPoint={startingPoint}
-            onUpdate={onUpdateStartingPoint}
-          />
-
-          {/* Map */}
-          {winner.lat !== 0 && winner.lng !== 0 && (
-            <ErrorBoundary
-              fallback={
-                <div className="naver-map">
-                  <div className="naver-map__error">
-                    <p>지도를 불러올 수 없습니다.</p>
-                  </div>
-                </div>
-              }
-            >
-              <NaverMap
-                center={mapCenter}
-                markers={markers}
-                path={directions?.path}
-              />
-            </ErrorBoundary>
-          )}
-        </div>
-      </details>
+      {/* TODO: Naver Map link, directions, map, starting point — hidden until NCP API issues are resolved */}
 
       {/* Share */}
       <SharePanel winner={winner} restaurants={restaurants} />
