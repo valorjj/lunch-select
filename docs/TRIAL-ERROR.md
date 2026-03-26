@@ -42,4 +42,28 @@ Each entry follows this structure:
 
 ---
 
+### 2026-03-26 — Naver Place Page Structure Changed (Next.js → Apollo Client)
+
+**What We Tried**: Fetching restaurant data from `pcmap.place.naver.com/restaurant/{id}/home` and parsing `<script id="__NEXT_DATA__">` JSON.
+
+**Result**: 500 error — `__NEXT_DATA__` no longer exists. Naver migrated from Next.js to Apollo Client. Data is now in `window.__APOLLO_STATE__`, a normalized Apollo cache with keys like `PlaceDetailBase:{placeId}` and `Menu:{placeId}_N`.
+
+**Lesson Learned**: Internal APIs can change without notice. Updated `api/place.ts` to parse `__APOLLO_STATE__` instead. Key differences:
+- Place info: `PlaceDetailBase:{placeId}` (name, category, address, coordinate.x/y, virtualPhone)
+- Menu items: `Menu:{placeId}_0` through `Menu:{placeId}_N` (name, price, description, images)
+- No thumbnail in `PlaceDetailBase` — images are in `paiUpperImage`, menu item `images[]`, or `PlaceDetailImages`
+- JSON extraction uses brace-depth counting instead of regex (Apollo state is large and complex)
+
+---
+
+### 2026-03-26 — naver.me Short URLs Expire / Don't Resolve Server-Side
+
+**What We Tried**: Server-side `fetch` with `redirect: 'follow'` to resolve `naver.me` short URLs to full Naver Map URLs containing the place ID.
+
+**Result**: Returns 404. Naver short URLs either expire quickly or block non-browser requests. Tried HEAD requests, various User-Agent/Referer headers — all return 404.
+
+**Lesson Learned**: `naver.me` short URLs are unreliable for server-side resolution. Users should copy the **browser address bar URL** instead of the share button URL. The address bar URL (e.g., `map.naver.com/p/search/.../place/2038138593`) contains the place ID directly, requiring no server-side resolution. Updated UI text to guide users accordingly.
+
+---
+
 *More entries will be added as development progresses.*

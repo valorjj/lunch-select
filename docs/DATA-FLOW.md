@@ -2,23 +2,17 @@
 
 ## How to Get the Right URL
 
-### Option 1: Share Button (Recommended)
+### Browser Address Bar (Recommended)
 1. Go to Naver Map → search for a restaurant
 2. Click on the restaurant to open the detail panel
-3. Click **공유** (share) button
-4. Copy the short URL: `https://naver.me/FY3WJyBA`
-5. Paste into the app
-
-### Option 2: Browser Address Bar
-1. Go to Naver Map → search for a restaurant
-2. Click on the restaurant to open the detail panel
-3. Copy the full URL from the address bar, e.g.:
+3. Copy the full URL from the **browser address bar**, e.g.:
    ```
    https://map.naver.com/p/search/역삼역%20맛집/place/693144763?...
    ```
 4. Paste into the app
 
-**Both URL formats are supported.** The app detects which type and handles accordingly.
+### ~~Share Button~~ (Not Recommended)
+The share button produces `naver.me` short URLs (e.g., `https://naver.me/FY3WJyBA`). These **expire quickly** and **cannot be resolved server-side** (Naver returns 404 for non-browser requests). Use the address bar URL instead.
 
 ---
 
@@ -53,10 +47,10 @@
               [Fetch: pcmap.place.naver.com/restaurant/693144763/home]
                      │
                      ▼
-              [Parse HTML → extract <script id="__NEXT_DATA__">]
+              [Parse HTML → extract window.__APOLLO_STATE__]
                      │
                      ▼
-              [JSON: props.initialState.place.detailPlace]
+              [JSON: PlaceDetailBase:{placeId} + Menu:{placeId}_N]
                      │
                      ▼
               [Extract fields: name, category, menus, thumbnail, coords]
@@ -136,7 +130,8 @@ https://lunch-select.vercel.app/api/geocode?query=서울+강남구+역삼동
 2. Look for the `/api/place` request
 3. Check the response JSON for error messages
 4. Try opening `pcmap.place.naver.com/restaurant/{placeId}/home` directly in browser
-5. If `__NEXT_DATA__` structure changed, inspect the JSON and update field paths in `api/place.ts`
+5. If `__APOLLO_STATE__` structure changed, inspect the JSON and update field paths in `api/place.ts`
+6. If using a `naver.me` short URL, it may have expired — copy the address bar URL instead
 
 ### If map doesn't load:
 1. Check browser console for Naver Map SDK errors

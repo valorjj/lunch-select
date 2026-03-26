@@ -26,6 +26,17 @@
 - No official Place Detail API exists — internal API is the only option for menu/price data
 - NCP application registered at `console.ncloud.com`
 
+## 2026-03-26 — Phase 2: Apollo State Migration + URL Fix
+
+### Naver Place Page Migration
+- Naver migrated `pcmap.place.naver.com` from Next.js (`__NEXT_DATA__`) to Apollo Client (`__APOLLO_STATE__`)
+- Updated `api/place.ts` to parse Apollo cache: `PlaceDetailBase:{placeId}` for info, `Menu:{placeId}_N` for menus
+- Thumbnail extraction searches menu images and other Apollo cache entries
+
+### naver.me Short URL Issue
+- `naver.me` short URLs return 404 when fetched server-side (expired or blocked)
+- Updated UI to guide users to copy browser address bar URL instead of share button URL
+
 ## 2026-03-26 — Prototype Complete (Steps 0-8)
 
 ### Step 1: Project Scaffolding
@@ -35,7 +46,7 @@
 - Set up `naver.maps` global type declarations in `react-app-env.d.ts`
 
 ### Step 2: Serverless API Proxy
-- `api/place.ts` — Fetches restaurant data from `pcmap.place.naver.com`, parses `__NEXT_DATA__`
+- `api/place.ts` — Fetches restaurant data from `pcmap.place.naver.com`, parses `__APOLLO_STATE__`
 - `api/directions.ts` — Proxies Naver Directions 5 API with NCP auth
 - `api/geocode.ts` — Proxies Naver Geocoding API
 

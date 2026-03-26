@@ -117,7 +117,7 @@ All routes live in the `/api/` directory at project root. Vercel automatically d
 Client request
   → Serverless function
     → Fetch pcmap.place.naver.com/restaurant/{id}/home
-    → Parse __NEXT_DATA__ JSON or API response
+    → Parse window.__APOLLO_STATE__ (Apollo Client cache)
     → Transform to Restaurant type
   → Return JSON { name, category, menuItems, thumbnail, address, lat, lng }
 ```

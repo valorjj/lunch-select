@@ -52,11 +52,10 @@ Build "점심 뭐 먹지?" (What should we eat for lunch?) — a lunch picker ap
 The prototype is deployed. The next session should focus on **end-to-end testing** and fixing issues with the Naver data pipeline.
 
 ### Priority 1: Verify the data flow works
-- [ ] Test with real Naver Map URLs on the deployed Vercel app
-- [ ] Confirm `api/place.ts` successfully fetches `__NEXT_DATA__` from `pcmap.place.naver.com`
+- [x] Test with real Naver Map URLs on the deployed Vercel app
+- [x] Discovered `__NEXT_DATA__` removed — migrated to `__APOLLO_STATE__` parsing
 - [ ] Confirm restaurant name, menu, prices, thumbnail, coordinates all populate correctly
-- [ ] If `__NEXT_DATA__` parsing fails, inspect the actual HTML response and adjust field paths
-- [ ] Test `naver.me` short URL resolution end-to-end
+- [x] Discovered `naver.me` short URLs expire / return 404 server-side — updated UI to guide users to address bar URL
 
 ### Priority 2: Verify map + directions
 - [ ] Confirm Naver Map JS SDK loads with your NCP Client ID

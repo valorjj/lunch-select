@@ -98,10 +98,12 @@ This is the only way to get menu items and prices. It's an internal Naver API, n
 
 **Known patterns:**
 - HTML page: `https://pcmap.place.naver.com/restaurant/{placeId}/home`
-- Contains `__NEXT_DATA__` script tag with full JSON payload
-- JSON includes: name, category, address, coordinates, menu items, prices, images, hours, phone
+- Contains `window.__APOLLO_STATE__` with Apollo Client cache (normalized GraphQL data)
+- `PlaceDetailBase:{placeId}` — name, category, address, coordinate (x/y), virtualPhone
+- `Menu:{placeId}_N` — menu items with name, price, description, images
+- Images are in separate Apollo cache entries (paiUpperImage, PlaceDetailImages, etc.)
 
-**Risk:** Naver can change or block this at any time. Our serverless proxy (`api/place.ts`) isolates this risk — only one file needs updating if the API changes.
+**Risk:** Naver can change or block this at any time. Our serverless proxy (`api/place.ts`) isolates this risk — only one file needs updating if the API changes. Already migrated once from `__NEXT_DATA__` (Next.js) to `__APOLLO_STATE__` (Apollo Client) on 2026-03-26.
 
 ---
 
