@@ -13,10 +13,40 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   }
 
-  &__remove {
+  &__actions {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
+    display: flex;
+    gap: 0.35rem;
+    z-index: 1;
+  }
+
+  &__bookmark {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    line-height: 1;
+
+    &:hover { background: rgba(0, 0, 0, 0.7); }
+
+    &--active {
+      background: var(--color-primary);
+      color: #fff;
+      &:hover { background: var(--color-primary-dark); }
+    }
+  }
+
+  &__remove {
     width: 28px;
     height: 28px;
     border: none;
@@ -28,7 +58,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1;
     transition: background 0.2s;
     line-height: 1;
 

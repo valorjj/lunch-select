@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Restaurant } from './types/restaurant';
 import { useRestaurants } from './hooks/useRestaurants';
 import { useAuth } from './hooks/useAuth';
+import { useBookmarks } from './hooks/useBookmarks';
 import { UrlInput } from './components/UrlInput';
 import { RestaurantList } from './components/RestaurantList';
 import { LadderGame } from './components/LadderGame/LadderGame';
@@ -29,6 +30,7 @@ function App() {
 
   const { restaurants, isLoading, error, addFromUrl, removeRestaurant, clearAll } = useRestaurants();
   const { user, isLoading: authLoading, login, logout } = useAuth();
+  const { isBookmarked, toggle: toggleBookmark } = useBookmarks(!!user);
 
   const handleStartGame = useCallback(() => {
     if (restaurants.length >= 2) {
@@ -83,6 +85,8 @@ function App() {
               onRemove={removeRestaurant}
               onStartGame={handleStartGame}
               isLoading={isLoading}
+              isBookmarked={user ? isBookmarked : undefined}
+              onToggleBookmark={user ? toggleBookmark : undefined}
             />
           </div>
         )}
@@ -103,6 +107,7 @@ function App() {
           <div className="fade-in">
             <ResultScreen
               winner={winner}
+              restaurants={restaurants}
               startingPoint={startingPoint}
               onRetry={handleRetry}
               onStartOver={handleStartOver}

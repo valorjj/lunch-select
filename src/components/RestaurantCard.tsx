@@ -6,6 +6,8 @@ interface RestaurantCardProps {
   restaurant: Restaurant;
   onRemove: (id: string) => void;
   index: number;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (placeId: string) => void;
 }
 
 function formatPrice(price: number | null): string {
@@ -13,16 +15,27 @@ function formatPrice(price: number | null): string {
   return new Intl.NumberFormat('ko-KR').format(price) + '원';
 }
 
-export function RestaurantCard({ restaurant, onRemove, index }: RestaurantCardProps) {
+export function RestaurantCard({ restaurant, onRemove, index, isBookmarked, onToggleBookmark }: RestaurantCardProps) {
   return (
     <div className="restaurant-card" style={{ animationDelay: `${index * 0.1}s` }}>
-      <button
-        className="restaurant-card__remove"
-        onClick={() => onRemove(restaurant.id)}
-        title="삭제"
-      >
-        &times;
-      </button>
+      <div className="restaurant-card__actions">
+        {onToggleBookmark && (
+          <button
+            className={`restaurant-card__bookmark ${isBookmarked ? 'restaurant-card__bookmark--active' : ''}`}
+            onClick={() => onToggleBookmark(restaurant.id)}
+            title={isBookmarked ? '북마크 해제' : '북마크'}
+          >
+            {isBookmarked ? '\u2605' : '\u2606'}
+          </button>
+        )}
+        <button
+          className="restaurant-card__remove"
+          onClick={() => onRemove(restaurant.id)}
+          title="삭제"
+        >
+          &times;
+        </button>
+      </div>
 
       {restaurant.thumbnail && (
         <div className="restaurant-card__image">

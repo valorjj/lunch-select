@@ -3,6 +3,7 @@ import { Restaurant } from '../../types/restaurant';
 import { NaverMap } from '../NaverMap/NaverMap';
 import { StartingPoint } from '../StartingPoint/StartingPoint';
 import { ErrorBoundary } from '../ErrorBoundary';
+import { SharePanel } from '../SharePanel/SharePanel';
 import { useDirections, formatDistance, formatDuration } from '../../hooks/useDirections';
 import './ResultScreen.scss';
 
@@ -14,6 +15,7 @@ interface StartingPointData {
 
 interface ResultScreenProps {
   winner: Restaurant;
+  restaurants: Restaurant[];
   startingPoint: StartingPointData;
   onRetry: () => void;
   onStartOver: () => void;
@@ -27,6 +29,7 @@ function formatPrice(price: number | null): string {
 
 export function ResultScreen({
   winner,
+  restaurants,
   startingPoint,
   onRetry,
   onStartOver,
@@ -171,6 +174,9 @@ export function ResultScreen({
           />
         </ErrorBoundary>
       )}
+
+      {/* Share */}
+      <SharePanel winner={winner} restaurants={restaurants} />
 
       {/* Action buttons */}
       <div className="result-screen__actions">

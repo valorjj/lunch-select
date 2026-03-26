@@ -10,9 +10,11 @@ interface RestaurantListProps {
   onRemove: (id: string) => void;
   onStartGame: () => void;
   isLoading?: boolean;
+  isBookmarked?: (placeId: string) => boolean;
+  onToggleBookmark?: (placeId: string) => void;
 }
 
-export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading }: RestaurantListProps) {
+export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, isBookmarked, onToggleBookmark }: RestaurantListProps) {
   const canStartGame = restaurants.length >= APP_CONFIG.minRestaurants;
 
   if (restaurants.length === 0 && isLoading) {
@@ -52,6 +54,8 @@ export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading }
             restaurant={restaurant}
             onRemove={onRemove}
             index={index}
+            isBookmarked={isBookmarked ? isBookmarked(restaurant.id) : undefined}
+            onToggleBookmark={onToggleBookmark}
           />
         ))}
         {isLoading && <SkeletonCard />}
