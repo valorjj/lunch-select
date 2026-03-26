@@ -13,6 +13,20 @@ interface NaverPlaceData {
   phone: string;
 }
 
+// In-memory cache to avoid 429 rate limits from Naver Place scraping
+const cache = new Map<string, { data: NaverPlaceData; timestamp: number }>();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+function getCached(placeId: string): NaverPlaceData | null {
+  const entry = cache.get(placeId);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    cache.delete(placeId);
+    return null;
+  }
+  return entry.data;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   let placeId = typeof req.query.id === 'string' ? req.query.id : null;
   const rawUrl = typeof req.query.url === 'string' ? req.query.url : null;
@@ -28,8 +42,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  // Check cache first
+  const cached = getCached(placeId);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
+
   try {
     const data = await fetchPlaceData(placeId);
+    cache.set(placeId, { data, timestamp: Date.now() });
     return res.status(200).json(data);
   } catch (error: any) {
     console.error('Place API error:', error.message);
