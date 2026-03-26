@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { apiFetch } from '../utils/api';
 
 interface DirectionsResult {
   path: [number, number][];
@@ -41,7 +40,8 @@ export function useDirections(
       try {
         const startParam = `${start!.lng},${start!.lat}`;
         const goalParam = `${goal!.lng},${goal!.lat}`;
-        const response = await apiFetch(
+        // Use direct fetch (not apiFetch) since directions endpoint is a Vercel function
+        const response = await fetch(
           `/api/directions?start=${encodeURIComponent(startParam)}&goal=${encodeURIComponent(goalParam)}`
         );
 
