@@ -18,15 +18,28 @@ interface NaverMapProps {
 export function NaverMap({ center, markers, path, zoom = 15 }: NaverMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<naver.maps.Map | null>(null);
+  const [mapError, setMapError] = React.useState(false);
 
   useEffect(() => {
-    if (!containerRef.current || typeof naver === 'undefined') return;
+    if (!containerRef.current) return;
 
-    // Initialize map
-    const map = new naver.maps.Map(containerRef.current, {
-      center: new naver.maps.LatLng(center.lat, center.lng),
-      zoom,
-    });
+    // Check if Naver Maps SDK is available and properly authenticated
+    if (typeof naver === 'undefined' || !naver.maps || !naver.maps.Map) {
+      setMapError(true);
+      return;
+    }
+
+    let map: naver.maps.Map;
+    try {
+      map = new naver.maps.Map(containerRef.current, {
+        center: new naver.maps.LatLng(center.lat, center.lng),
+        zoom,
+      });
+    } catch (e) {
+      console.error('Failed to initialize Naver Map:', e);
+      setMapError(true);
+      return;
+    }
     mapRef.current = map;
 
     const mapMarkers: naver.maps.Marker[] = [];
@@ -81,6 +94,17 @@ export function NaverMap({ center, markers, path, zoom = 15 }: NaverMapProps) {
       map.destroy();
     };
   }, [center.lat, center.lng, markers, path, zoom]);
+
+  if (mapError) {
+    return (
+      <div className="naver-map">
+        <div className="naver-map__error">
+          <p>지도를 불러올 수 없습니다.</p>
+          <p className="naver-map__error-hint">네이버 지도 API 인증을 확인해주세요.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="naver-map">
