@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Restaurant } from '../../types/restaurant';
 import { NaverMap } from '../NaverMap/NaverMap';
 import { StartingPoint } from '../StartingPoint/StartingPoint';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { useDirections, formatDistance, formatDuration } from '../../hooks/useDirections';
 import './ResultScreen.scss';
 
@@ -134,11 +135,22 @@ export function ResultScreen({
 
       {/* Map */}
       {winner.lat !== 0 && winner.lng !== 0 && (
-        <NaverMap
-          center={mapCenter}
-          markers={markers}
-          path={directions?.path}
-        />
+        <ErrorBoundary
+          fallback={
+            <div className="naver-map">
+              <div className="naver-map__error">
+                <p>지도를 불러올 수 없습니다.</p>
+                <p className="naver-map__error-hint">네이버 지도 API 인증을 확인해주세요.</p>
+              </div>
+            </div>
+          }
+        >
+          <NaverMap
+            center={mapCenter}
+            markers={markers}
+            path={directions?.path}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Action buttons */}
