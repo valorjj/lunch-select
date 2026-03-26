@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { DEFAULT_OFFICE } from '../../config/defaults';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { apiFetch } from '../../utils/api';
 import './StartingPoint.scss';
 
 interface StartingPointData {
@@ -53,7 +54,7 @@ export function StartingPoint({ currentPoint, onUpdate }: StartingPointProps) {
 
     setGeocoding(true);
     try {
-      const response = await fetch(`/api/geocode?query=${encodeURIComponent(address.trim())}`);
+      const response = await apiFetch(`/api/geocode?query=${encodeURIComponent(address.trim())}`);
       if (!response.ok) throw new Error('주소를 찾을 수 없습니다.');
 
       const data = await response.json();

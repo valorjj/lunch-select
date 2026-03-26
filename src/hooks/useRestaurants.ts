@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Restaurant } from '../types/restaurant';
 import { extractPlaceId, isNaverMapUrl } from '../utils/parseNaverUrl';
+import { apiFetch } from '../utils/api';
 
 const STORAGE_KEY = 'lunch-select-restaurants';
 
@@ -55,7 +56,7 @@ export function useRestaurants(): UseRestaurantsReturn {
         ? `/api/place?id=${clientPlaceId}`
         : `/api/place?url=${encodeURIComponent(url)}`;
 
-      const response = await fetch(apiUrl);
+      const response = await apiFetch(apiUrl);
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(errorData?.message || '음식점 정보를 가져올 수 없습니다.');
