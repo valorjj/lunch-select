@@ -60,7 +60,7 @@ function App() {
         <h1>
           점심 <span>뭐 먹지?</span>
         </h1>
-        <p>네이버 지도 맛집 URL을 추가하고 사다리타기로 정하세요</p>
+        <p>네이버 지도에서 음식점을 검색하고 주소창 URL을 복사해서 추가하세요</p>
       </header>
 
       <main className="app__content">

@@ -21,7 +21,7 @@ export function RestaurantList({ restaurants, onRemove, onStartGame }: Restauran
           네이버 지도에서 음식점 URL을 추가해보세요!
         </p>
         <p className="restaurant-list__empty-hint">
-          네이버 지도에서 음식점을 검색하고 URL을 복사해서 위에 붙여넣기 하세요
+          네이버 지도에서 음식점을 검색하고 브라우저 주소창의 URL을 복사해서 위에 붙여넣기 하세요
         </p>
       </div>
     );

@@ -23,7 +23,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!placeId) {
-    return res.status(400).json({ error: 'Could not extract place ID from the provided URL or parameters' });
+    return res.status(400).json({
+      error: 'URL에서 음식점 ID를 찾을 수 없습니다. 공유 링크(naver.me) 대신 브라우저 주소창의 URL을 복사해주세요.',
+    });
   }
 
   try {

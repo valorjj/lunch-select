@@ -24,7 +24,7 @@ export function UrlInput({ onAdd, isLoading, error, disabled }: UrlInputProps) {
         <input
           type="text"
           className="url-input__field"
-          placeholder="네이버 지도 음식점 URL을 붙여넣기 하세요"
+          placeholder="네이버 지도 주소창 URL을 붙여넣기 하세요"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           disabled={isLoading || disabled}
