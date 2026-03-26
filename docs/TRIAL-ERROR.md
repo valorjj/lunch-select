@@ -66,4 +66,14 @@ Each entry follows this structure:
 
 ---
 
+### 2026-03-26 — Vercel Serverless Functions Crashing (FUNCTION_INVOCATION_FAILED)
+
+**What We Tried**: All TypeScript API functions returned `500 FUNCTION_INVOCATION_FAILED` on Vercel, even a minimal health check endpoint returning `{ status: 'ok' }`. Plain JavaScript functions worked fine.
+
+**Result**: Root cause was the CRA `tsconfig.json` with `"target": "es5"` being applied to the `api/` serverless functions. Vercel runs Node v24, and ES5-compiled async/await code crashed at runtime.
+
+**Lesson Learned**: When using CRA (or any frontend framework) with Vercel serverless functions, the `api/` directory needs its own `api/tsconfig.json` with a modern target (e.g., `es2022`). The frontend tsconfig `"target": "es5"` is for browser compatibility and must NOT apply to Node.js serverless functions. A plain `.js` ping endpoint was the key diagnostic — it confirmed functions themselves worked, isolating the issue to TypeScript compilation.
+
+---
+
 *More entries will be added as development progresses.*
