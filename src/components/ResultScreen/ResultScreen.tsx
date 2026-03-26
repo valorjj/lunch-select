@@ -154,6 +154,16 @@ export function ResultScreen({
             메뉴 불러오기
           </button>
         )}
+        {!/^\d+$/.test(winner.id) && menuItems.length === 0 && !menuLoading && (
+          <a
+            className="result-screen__menu-link"
+            href={`https://map.naver.com/p/search/${encodeURIComponent(winner.name)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            네이버에서 메뉴 보기
+          </a>
+        )}
       </div>
 
       {/* Naver Map link — always visible */}
