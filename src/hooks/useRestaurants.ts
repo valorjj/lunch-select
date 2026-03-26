@@ -127,7 +127,8 @@ export function useRestaurants(): UseRestaurantsReturn {
       return next;
     });
 
-    // Fetch menu/thumbnail in background
+    // Fetch menu/thumbnail in background (only if we have a numeric place ID)
+    if (!/^\d+$/.test(result.id)) return;
     apiFetch(`/api/place?id=${result.id}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {

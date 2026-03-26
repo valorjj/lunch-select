@@ -56,26 +56,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const data = await response.json();
     const items: NaverSearchItem[] = data.items || [];
 
-    const results: SearchResult[] = items
-      .map((item) => {
-        const id = extractPlaceId(item.link);
-        if (!id) return null;
+    const results: SearchResult[] = items.map((item) => {
+      const placeId = extractPlaceId(item.link);
+      const { lat, lng } = katecToWgs84(Number(item.mapx), Number(item.mapy));
+      // Use place ID if available, otherwise generate ID from coordinates
+      const id = placeId || `${item.mapx}_${item.mapy}`;
 
-        const { lat, lng } = katecToWgs84(Number(item.mapx), Number(item.mapy));
-
-        return {
-          id,
-          name: stripHtml(item.title),
-          category: item.category,
-          address: item.address,
-          roadAddress: item.roadAddress,
-          lat,
-          lng,
-          phone: item.telephone,
-          naverMapUrl: `https://map.naver.com/p/entry/place/${id}`,
-        };
-      })
-      .filter((item): item is SearchResult => item !== null);
+      return {
+        id,
+        name: stripHtml(item.title),
+        category: item.category,
+        address: item.address,
+        roadAddress: item.roadAddress,
+        lat,
+        lng,
+        phone: item.telephone,
+        naverMapUrl: placeId
+          ? `https://map.naver.com/p/entry/place/${placeId}`
+          : `https://map.naver.com/p/search/${encodeURIComponent(stripHtml(item.title))}`,
+      };
+    });
 
     return res.status(200).json(results);
   } catch (error: any) {
