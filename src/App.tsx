@@ -81,7 +81,10 @@ function App() {
           <div />
           <AuthButton user={user} isLoading={authLoading} onLogin={login} onLogout={logout} />
         </div>
-        <h1>{headerTitle}</h1>
+        <h1
+          className="app__logo"
+          onClick={() => { setWinner(null); setRestaurantPhase('input'); setCafePhase('input'); }}
+        >{headerTitle}</h1>
         <p>{headerDesc}</p>
       </header>
 

@@ -19,7 +19,7 @@ export function RestaurantCard({ restaurant, onRemove, index, isBookmarked, onTo
   return (
     <div className="restaurant-card" style={{ animationDelay: `${index * 0.1}s` }}>
       <div className="restaurant-card__actions">
-        {onToggleBookmark && (
+        {onToggleBookmark && /^\d+$/.test(restaurant.id) && (
           <button
             className={`restaurant-card__bookmark ${isBookmarked ? 'restaurant-card__bookmark--active' : ''}`}
             onClick={() => onToggleBookmark(restaurant.id)}
