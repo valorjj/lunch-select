@@ -37,6 +37,18 @@
 - `naver.me` short URLs return 404 when fetched server-side (expired or blocked)
 - Updated UI to guide users to copy browser address bar URL instead of share button URL
 
+### Vercel Serverless Function Crash
+- All TS functions crashed with `FUNCTION_INVOCATION_FAILED` — CRA's `tsconfig.json` `"target": "es5"` was applied to API functions running on Node 24
+- Fixed by adding `api/tsconfig.json` with `"target": "es2022"`
+
+### Infinite Directions API Requests
+- Inline object literal `{ lat, lng }` passed to `useDirections` created new reference each render → infinite `useEffect` loop
+- Fixed by wrapping with `useMemo`
+
+### NCP Auth Issues
+- Map SDK auth failed: `lunch-select-two.vercel.app` not registered in NCP Web 서비스 URL
+- Directions API 401: Directions 5 not subscribed in NCP application
+
 ## 2026-03-26 — Prototype Complete (Steps 0-8)
 
 ### Step 1: Project Scaffolding

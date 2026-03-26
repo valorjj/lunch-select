@@ -76,4 +76,26 @@ Each entry follows this structure:
 
 ---
 
+### 2026-03-26 — Infinite Directions API Requests (Re-render Loop)
+
+**What We Tried**: On the result screen, `useDirections(startingPoint, { lat: winner.lat, lng: winner.lng })` was called with an inline object literal as the `goal` argument.
+
+**Result**: ~30 requests/second to `/api/directions`, all returning 500. The `useEffect` dependency on `goal` triggered every render because `{ lat, lng }` created a new object reference each time.
+
+**Lesson Learned**: Never pass inline object literals to hooks with `useEffect` dependencies. Wrap with `useMemo` to stabilize references: `const goal = useMemo(() => ({ lat, lng }), [lat, lng])`. This is a classic React anti-pattern.
+
+---
+
+### 2026-03-26 — Naver Map SDK + Directions API Auth Issues on Vercel
+
+**What We Tried**: Deployed to `lunch-select-two.vercel.app`. Map SDK showed "Open API 인증이 실패하였습니다" and Directions API returned 401 "Permission Denied / A subscription to the API is required."
+
+**Result**: Two NCP Console configuration issues:
+1. `lunch-select-two.vercel.app` was not registered as an allowed Web 서비스 URL
+2. Directions 5 API was not enabled/subscribed in the NCP application
+
+**Lesson Learned**: When the Vercel domain changes (e.g., `lunch-select.vercel.app` → `lunch-select-two.vercel.app`), NCP Web 서비스 URL must be updated to match. Also verify all required APIs (Dynamic Map, Directions 5, Geocoding) are checked in the NCP application settings. These are easy to forget during deployment.
+
+---
+
 *More entries will be added as development progresses.*

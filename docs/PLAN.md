@@ -58,9 +58,10 @@ The prototype is deployed. The next session should focus on **end-to-end testing
 - [x] Discovered `naver.me` short URLs expire / return 404 server-side — updated UI to guide users to address bar URL
 
 ### Priority 2: Verify map + directions
-- [ ] Confirm Naver Map JS SDK loads with your NCP Client ID
-- [ ] Confirm Directions 5 API returns route data via `api/directions.ts`
+- [ ] Confirm Naver Map JS SDK loads with your NCP Client ID — **BLOCKED**: need to add `lunch-select-two.vercel.app` to NCP Web 서비스 URL
+- [ ] Confirm Directions 5 API returns route data via `api/directions.ts` — **BLOCKED**: need to enable Directions 5 in NCP application
 - [ ] Confirm map renders markers + route polyline on result screen
+- [x] Fixed infinite directions request loop (inline object reference in useDirections)
 
 ### Priority 3: UX issues
 - [ ] Test the full flow: add 3+ restaurants → ladder game → result

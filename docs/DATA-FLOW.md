@@ -155,4 +155,6 @@ https://lunch-select.vercel.app/api/geocode?query=서울+강남구+역삼동
 |---------|---------------|
 | Application 이름 | `lunch-select` |
 | API 선택 | Dynamic Map, Directions 5, Geocoding (all checked) |
-| Web 서비스 URL | `http://localhost:3000`, `https://lunch-select.vercel.app` (or your actual domain) |
+| Web 서비스 URL | `http://localhost:3000`, `https://lunch-select-two.vercel.app` (or your actual Vercel domain) |
+
+> **Note**: If your Vercel domain changes (e.g., auto-assigned `lunch-select-two.vercel.app`), update the Web 서비스 URL in NCP to match. The Map SDK and Directions API will fail auth otherwise.
