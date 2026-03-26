@@ -21,6 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         'x-ncp-apigw-api-key-id': clientId,
         'x-ncp-apigw-api-key': clientSecret,
+        'Referer': 'https://lunch-select-two.vercel.app',
       },
     });
 
