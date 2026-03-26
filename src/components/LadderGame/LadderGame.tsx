@@ -57,7 +57,7 @@ export function LadderGame({ restaurants, onComplete }: LadderGameProps) {
     return path.map((p) => ({ x: colX(p.col), y: rowY(p.row) }));
   }, [path, colX, rowY]);
 
-  const { currentPos, progress, isAnimating, start: startAnimation } = useAnimation(
+  const { ballRef, glowRef, trailRef, progress, isAnimating, start: startAnimation } = useAnimation(
     pathPixels,
     APP_CONFIG.animationDurationMs
   );
@@ -98,42 +98,11 @@ export function LadderGame({ restaurants, onComplete }: LadderGameProps) {
 
   const rungs = getRungsForRendering(ladder);
 
-  // Build the trail polyline up to exactly where the ball is (distance-based, matching useAnimation)
-  const trailPoints = useMemo(() => {
-    if (!currentPos || pathPixels.length < 2) return '';
-
-    // Calculate segment lengths (same logic as getPointAlongPath in useAnimation)
-    const segments: number[] = [];
-    let totalLength = 0;
-    for (let i = 1; i < pathPixels.length; i++) {
-      const dx = pathPixels[i].x - pathPixels[i - 1].x;
-      const dy = pathPixels[i].y - pathPixels[i - 1].y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      segments.push(len);
-      totalLength += len;
-    }
-
-    const targetLength = progress * totalLength;
-    let accumulated = 0;
-    const trail: { x: number; y: number }[] = [pathPixels[0]];
-
-    for (let i = 0; i < segments.length; i++) {
-      if (accumulated + segments[i] >= targetLength) {
-        // Ball is within this segment — add the ball position and stop
-        trail.push(currentPos);
-        break;
-      }
-      accumulated += segments[i];
-      trail.push(pathPixels[i + 1]);
-    }
-
-    // If progress is 1, include the final point
-    if (progress >= 1) {
-      trail.push(pathPixels[pathPixels.length - 1]);
-    }
-
-    return trail.map((p) => `${p.x},${p.y}`).join(' ');
-  }, [currentPos, pathPixels, progress]);
+  // Final trail for done state (all path points)
+  const finalTrailPoints = useMemo(() => {
+    if (gameState !== 'done' || pathPixels.length < 2) return '';
+    return pathPixels.map((p) => `${p.x},${p.y}`).join(' ');
+  }, [gameState, pathPixels]);
 
   return (
     <div className="ladder-game">
@@ -171,10 +140,22 @@ export function LadderGame({ restaurants, onComplete }: LadderGameProps) {
             />
           ))}
 
-          {/* Trail line — only show while playing or done */}
-          {trailPoints && (gameState === 'playing' || gameState === 'done') && (
+          {/* Trail line — ref-based during animation, static when done */}
+          {gameState === 'playing' && (
             <polyline
-              points={trailPoints}
+              ref={trailRef}
+              points=""
+              fill="none"
+              stroke="var(--color-primary)"
+              strokeWidth={4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.8}
+            />
+          )}
+          {gameState === 'done' && finalTrailPoints && (
+            <polyline
+              points={finalTrailPoints}
               fill="none"
               stroke="var(--color-primary)"
               strokeWidth={4}
@@ -184,12 +165,13 @@ export function LadderGame({ restaurants, onComplete }: LadderGameProps) {
             />
           )}
 
-          {/* Animated ball */}
-          {currentPos && isAnimating && (
+          {/* Animated ball — ref-based, no React re-renders */}
+          {(gameState === 'playing') && (
             <>
               <circle
-                cx={currentPos.x}
-                cy={currentPos.y}
+                ref={glowRef}
+                cx={0}
+                cy={0}
                 r={10}
                 fill="var(--color-primary)"
                 opacity={0.2}
@@ -202,8 +184,9 @@ export function LadderGame({ restaurants, onComplete }: LadderGameProps) {
                 />
               </circle>
               <circle
-                cx={currentPos.x}
-                cy={currentPos.y}
+                ref={ballRef}
+                cx={0}
+                cy={0}
                 r={8}
                 fill="var(--color-primary)"
               />
