@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SearchResult } from '../types/restaurant';
-import { apiFetch } from '../utils/api';
 import './RestaurantSearch.scss';
+
+// Search endpoint only exists on Vercel functions, not the Spring Boot backend
+const SEARCH_API_BASE = '';
 
 interface RestaurantSearchProps {
   onSelect: (result: SearchResult) => void;
@@ -30,7 +32,7 @@ export function RestaurantSearch({ onSelect, disabled }: RestaurantSearchProps) 
       setIsSearching(true);
       setError(null);
       try {
-        const response = await apiFetch(`/api/search?query=${encodeURIComponent(query.trim())}`);
+        const response = await fetch(`${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(query.trim())}`);
         if (!response.ok) {
           throw new Error('검색에 실패했습니다.');
         }
