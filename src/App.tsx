@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { Restaurant } from './types/restaurant';
 import { useRestaurants } from './hooks/useRestaurants';
+import { useAuth } from './hooks/useAuth';
 import { UrlInput } from './components/UrlInput';
 import { RestaurantList } from './components/RestaurantList';
 import { LadderGame } from './components/LadderGame/LadderGame';
 import { ResultScreen } from './components/ResultScreen/ResultScreen';
+import { AuthButton } from './components/AuthButton/AuthButton';
 import { DEFAULT_OFFICE } from './config/defaults';
 import './App.scss';
 
@@ -26,6 +28,7 @@ function App() {
   });
 
   const { restaurants, isLoading, error, addFromUrl, removeRestaurant, clearAll } = useRestaurants();
+  const { user, isLoading: authLoading, login, logout } = useAuth();
 
   const handleStartGame = useCallback(() => {
     if (restaurants.length >= 2) {
@@ -57,6 +60,10 @@ function App() {
   return (
     <div className="app">
       <header className="app__header">
+        <div className="app__header-top">
+          <div />
+          <AuthButton user={user} isLoading={authLoading} onLogin={login} onLogout={logout} />
+        </div>
         <h1>
           점심 <span>뭐 먹지?</span>
         </h1>
