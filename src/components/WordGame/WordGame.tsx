@@ -1,0 +1,174 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import { decomposeWord } from './hangul';
+import { GameBoard } from './GameBoard';
+import { JamoKeyboard } from './JamoKeyboard';
+import { GameSettings } from './GameSettings';
+import { CellStatus } from './GameCell';
+import { FOOD_WORDS } from '../../data/foodWords';
+import { GENERAL_WORDS } from '../../data/generalWords';
+import './WordGame.scss';
+
+const MAX_ATTEMPTS = 6;
+
+interface GuessEntry {
+  jamos: string[];
+  statuses: CellStatus[];
+}
+
+function evaluateGuess(guess: string[], solution: string[]): CellStatus[] {
+  const statuses: CellStatus[] = new Array(guess.length).fill('absent');
+  const solutionUsed: boolean[] = new Array(solution.length).fill(false);
+
+  // Pass 1: exact matches (green)
+  guess.forEach((jamo, i) => {
+    if (jamo === solution[i]) {
+      statuses[i] = 'correct';
+      solutionUsed[i] = true;
+    }
+  });
+
+  // Pass 2: present but wrong position (yellow)
+  guess.forEach((jamo, i) => {
+    if (statuses[i] === 'correct') return;
+    const idx = solution.findIndex((s, j) => s === jamo && !solutionUsed[j]);
+    if (idx !== -1) {
+      statuses[i] = 'present';
+      solutionUsed[idx] = true;
+    }
+  });
+
+  return statuses;
+}
+
+function pickRandomWord(words: string[]): string {
+  return words[Math.floor(Math.random() * words.length)];
+}
+
+export function WordGame() {
+  const [syllableCount, setSyllableCount] = useState(3);
+  const [theme, setTheme] = useState<'food' | 'general'>('food');
+  const [solution, setSolution] = useState(() => {
+    const words = FOOD_WORDS[3] || [];
+    return words.length > 0 ? words[Math.floor(Math.random() * words.length)] : '비빔밥';
+  });
+  const [guesses, setGuesses] = useState<GuessEntry[]>([]);
+  const [currentGuess, setCurrentGuess] = useState<string[]>([]);
+  const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing');
+  const [message, setMessage] = useState<string | null>(null);
+
+  const solutionJamos = useMemo(() => decomposeWord(solution), [solution]);
+  const jamoLength = solutionJamos.length;
+
+  const keyStatuses = useMemo(() => {
+    const statuses: Record<string, CellStatus> = {};
+    for (const guess of guesses) {
+      guess.jamos.forEach((jamo, i) => {
+        const newStatus = guess.statuses[i];
+        const existing = statuses[jamo];
+        // Priority: correct > present > absent
+        if (!existing || newStatus === 'correct' || (newStatus === 'present' && existing === 'absent')) {
+          statuses[jamo] = newStatus;
+        }
+      });
+    }
+    return statuses;
+  }, [guesses]);
+
+  const startNewGame = useCallback((sc?: number, th?: 'food' | 'general') => {
+    const count = sc ?? syllableCount;
+    const wordTheme = th ?? theme;
+    const wordList = wordTheme === 'food' ? FOOD_WORDS : GENERAL_WORDS;
+    const words = wordList[count] || [];
+    if (words.length === 0) {
+      setMessage('해당 설정의 단어가 없습니다.');
+      return;
+    }
+    setSolution(pickRandomWord(words));
+    setGuesses([]);
+    setCurrentGuess([]);
+    setGameStatus('playing');
+    setMessage(null);
+  }, [syllableCount, theme]);
+
+  const handleSyllableCountChange = useCallback((count: number) => {
+    setSyllableCount(count);
+    startNewGame(count, undefined);
+  }, [startNewGame]);
+
+  const handleThemeChange = useCallback((th: 'food' | 'general') => {
+    setTheme(th);
+    startNewGame(undefined, th);
+  }, [startNewGame]);
+
+  const handleChar = useCallback((jamo: string) => {
+    if (gameStatus !== 'playing') return;
+    if (currentGuess.length >= jamoLength) return;
+    setCurrentGuess((prev) => [...prev, jamo]);
+    setMessage(null);
+  }, [gameStatus, currentGuess.length, jamoLength]);
+
+  const handleDelete = useCallback(() => {
+    if (gameStatus !== 'playing') return;
+    setCurrentGuess((prev) => prev.slice(0, -1));
+    setMessage(null);
+  }, [gameStatus]);
+
+  const handleEnter = useCallback(() => {
+    if (gameStatus !== 'playing') return;
+    if (currentGuess.length !== jamoLength) {
+      setMessage(`자모 ${jamoLength}개를 모두 입력해주세요.`);
+      return;
+    }
+
+    const statuses = evaluateGuess(currentGuess, solutionJamos);
+    const newGuess: GuessEntry = { jamos: [...currentGuess], statuses };
+    const newGuesses = [...guesses, newGuess];
+    setGuesses(newGuesses);
+    setCurrentGuess([]);
+
+    if (statuses.every((s) => s === 'correct')) {
+      setGameStatus('won');
+      setMessage(`정답! "${solution}" 맞았습니다!`);
+    } else if (newGuesses.length >= MAX_ATTEMPTS) {
+      setGameStatus('lost');
+      setMessage(`아쉽네요! 정답은 "${solution}" 이었습니다.`);
+    }
+  }, [gameStatus, currentGuess, jamoLength, solutionJamos, guesses, solution]);
+
+  return (
+    <div className="word-game">
+      <GameSettings
+        syllableCount={syllableCount}
+        onSyllableCountChange={handleSyllableCountChange}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        onNewGame={() => startNewGame()}
+      />
+
+      <div className="word-game__hint">
+        {theme === 'food' ? '음식' : '일반'} 단어 | {syllableCount}글자 | 자모 {jamoLength}개
+      </div>
+
+      <GameBoard
+        guesses={guesses}
+        currentGuess={currentGuess}
+        jamoLength={jamoLength}
+        maxAttempts={MAX_ATTEMPTS}
+      />
+
+      {message && (
+        <div className={`word-game__message ${gameStatus === 'won' ? 'word-game__message--won' : gameStatus === 'lost' ? 'word-game__message--lost' : ''}`}>
+          {message}
+        </div>
+      )}
+
+      <JamoKeyboard
+        onChar={handleChar}
+        onEnter={handleEnter}
+        onDelete={handleDelete}
+        keyStatuses={keyStatuses}
+        disabled={gameStatus !== 'playing'}
+      />
+    </div>
+  );
+}

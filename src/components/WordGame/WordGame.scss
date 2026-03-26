@@ -1,0 +1,246 @@
+.word-game {
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+
+  // Settings
+  &__settings {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  &__settings-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__settings-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  &__settings-options {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  &__settings-btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover {
+      border-color: var(--color-primary);
+    }
+
+    &--active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #fff;
+    }
+  }
+
+  &__new-game {
+    margin-left: auto;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--color-primary);
+    border-radius: 8px;
+    background: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-primary);
+      color: #fff;
+    }
+  }
+
+  &__hint {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+
+  // Board
+  &__board {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__row {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__cell {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 2px solid var(--color-border);
+    border-radius: 6px;
+    transition: all 0.2s;
+
+    &--empty {
+      border-color: var(--color-border);
+      background: var(--color-surface);
+    }
+
+    &--active {
+      border-color: var(--color-text-muted);
+      background: var(--color-surface);
+    }
+
+    &--correct {
+      background: #6aaa64;
+      border-color: #6aaa64;
+      color: #fff;
+    }
+
+    &--present {
+      background: #c9b458;
+      border-color: #c9b458;
+      color: #fff;
+    }
+
+    &--absent {
+      background: #787c7e;
+      border-color: #787c7e;
+      color: #fff;
+    }
+  }
+
+  // Message
+  &__message {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+
+    &--won {
+      background: rgba(106, 170, 100, 0.15);
+      border-color: #6aaa64;
+      color: #6aaa64;
+    }
+
+    &--lost {
+      background: rgba(var(--color-error-rgb), 0.08);
+      border-color: var(--color-error);
+      color: var(--color-error);
+    }
+  }
+
+  // Keyboard
+  &__keyboard {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  &__key {
+    min-width: 32px;
+    height: 44px;
+    padding: 0 6px;
+    border: none;
+    border-radius: 6px;
+    background: #d3d6da;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1a1a1b;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+      opacity: 0.85;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--action {
+      min-width: 52px;
+      font-size: 0.75rem;
+      background: #d3d6da;
+    }
+
+    &--correct {
+      background: #6aaa64;
+      color: #fff;
+    }
+
+    &--present {
+      background: #c9b458;
+      color: #fff;
+    }
+
+    &--absent {
+      background: #787c7e;
+      color: #fff;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .word-game {
+    &__cell {
+      width: 32px;
+      height: 32px;
+      font-size: 0.95rem;
+    }
+
+    &__key {
+      min-width: 26px;
+      height: 40px;
+      font-size: 0.8rem;
+    }
+
+    &__settings {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__new-game {
+      margin-left: 0;
+      width: 100%;
+      text-align: center;
+    }
+  }
+}

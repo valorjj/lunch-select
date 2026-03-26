@@ -11,6 +11,7 @@ import { RestaurantList } from './components/RestaurantList';
 import { LadderGame } from './components/LadderGame/LadderGame';
 import { ResultScreen } from './components/ResultScreen/ResultScreen';
 import { AuthButton } from './components/AuthButton/AuthButton';
+import { WordGame } from './components/WordGame/WordGame';
 import './App.scss';
 
 type AppPhase = 'input' | 'game' | 'result';
@@ -29,6 +30,7 @@ function App() {
 
   // Active tab state
   const isRestaurant = activeTab === 'restaurant';
+  const isGame = activeTab === 'game';
   const store = isRestaurant ? restaurantStore : cafeStore;
   const phase = isRestaurant ? restaurantPhase : cafePhase;
   const setPhase = isRestaurant ? setRestaurantPhase : setCafePhase;
@@ -60,13 +62,17 @@ function App() {
     setPhase('input');
   }, [setPhase]);
 
-  const headerTitle = isRestaurant ? (
+  const headerTitle = isGame ? (
+    <>꼬들 <span>게임</span></>
+  ) : isRestaurant ? (
     <>점심 <span>뭐 먹지?</span></>
   ) : (
     <>카페 <span>어디 갈까?</span></>
   );
 
-  const headerDesc = isRestaurant
+  const headerDesc = isGame
+    ? '한글 단어를 맞혀보세요!'
+    : isRestaurant
     ? '음식점 이름을 검색해서 추가하세요'
     : '카페 이름을 검색해서 추가하세요';
 
@@ -89,17 +95,25 @@ function App() {
       </header>
 
       <main className="app__content">
-        <CompanyLocation
-          location={companyLoc.location}
-          savedLocations={companyLoc.savedLocations}
-          onUpdate={companyLoc.updateLocation}
-          onSave={companyLoc.addSavedLocation}
-          onRemoveSaved={companyLoc.removeSavedLocation}
-        />
+        {!isGame && (
+          <CompanyLocation
+            location={companyLoc.location}
+            savedLocations={companyLoc.savedLocations}
+            onUpdate={companyLoc.updateLocation}
+            onSave={companyLoc.addSavedLocation}
+            onRemoveSaved={companyLoc.removeSavedLocation}
+          />
+        )}
 
         <CategoryTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {phase === 'input' && (
+        {isGame && (
+          <div className="fade-in">
+            <WordGame />
+          </div>
+        )}
+
+        {!isGame && phase === 'input' && (
           <div className="fade-in">
             <RestaurantSearch
               onSelect={store.addFromSearch}
@@ -121,7 +135,7 @@ function App() {
           </div>
         )}
 
-        {phase === 'game' && (
+        {!isGame && phase === 'game' && (
           <div className="fade-in">
             <button className="app__back-button" onClick={handleBackToInput}>
               &#8592; 뒤로 가기
@@ -133,7 +147,7 @@ function App() {
           </div>
         )}
 
-        {phase === 'result' && winner && (
+        {!isGame && phase === 'result' && winner && (
           <div className="fade-in">
             <ResultScreen
               winner={winner}
