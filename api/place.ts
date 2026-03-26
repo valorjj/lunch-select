@@ -91,50 +91,82 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
 
   const html = await response.text();
 
-  // Extract __NEXT_DATA__ JSON from the page
-  const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
-  if (!nextDataMatch) {
-    throw new Error('Could not find __NEXT_DATA__ in page');
+  // Naver Place uses Apollo Client — data is in window.__APOLLO_STATE__
+  const apolloStart = html.indexOf('window.__APOLLO_STATE__');
+  if (apolloStart === -1) {
+    throw new Error('Could not find __APOLLO_STATE__ in page');
   }
-
-  const nextData = JSON.parse(nextDataMatch[1]);
-  const initialState = nextData?.props?.initialState;
-
-  if (!initialState) {
-    throw new Error('Could not parse initialState from __NEXT_DATA__');
+  const jsonStart = html.indexOf('{', apolloStart);
+  // Find the matching closing brace by tracking depth
+  let depth = 0;
+  let jsonEnd = jsonStart;
+  for (let i = jsonStart; i < html.length; i++) {
+    if (html[i] === '{') depth++;
+    else if (html[i] === '}') depth--;
+    if (depth === 0) {
+      jsonEnd = i + 1;
+      break;
+    }
   }
+  const apolloState = JSON.parse(html.slice(jsonStart, jsonEnd));
 
-  // Navigate the data structure to extract place info
-  const place = initialState.place?.detailPlace?.detail || initialState.place?.detailPlace;
-
+  // Main place info is in PlaceDetailBase:{placeId}
+  const place = apolloState[`PlaceDetailBase:${placeId}`];
   if (!place) {
-    throw new Error('Could not find place detail in data');
+    throw new Error('Could not find PlaceDetailBase in Apollo state');
   }
 
-  // Extract basic info
-  const name = place.name || place.basicInfo?.name || '';
-  const category = place.category || place.basicInfo?.category || '';
-  const address = place.address || place.basicInfo?.address || '';
-  const roadAddress = place.roadAddress || place.basicInfo?.roadAddress || '';
-  const phone = place.phone || place.basicInfo?.phone || '';
-  const lat = place.y || place.basicInfo?.coordY || 0;
-  const lng = place.x || place.basicInfo?.coordX || 0;
+  const name = place.name || '';
+  const category = place.category || '';
+  const address = place.address || '';
+  const roadAddress = place.roadAddress || '';
+  const phone = place.virtualPhone || place.phone || '';
+  const coord = place.coordinate || {};
+  const lat = coord.y || 0;
+  const lng = coord.x || 0;
 
-  // Extract thumbnail
-  const thumbnail =
-    place.thumbnail ||
-    place.basicInfo?.mainPhotoUrl ||
-    place.photos?.[0]?.url ||
-    '';
+  // Thumbnail: search Apollo state for place images
+  let thumbnail = '';
+  // Try menu item images first (most reliable)
+  const firstMenu = apolloState[`Menu:${placeId}_0`];
+  if (firstMenu?.images?.length) {
+    thumbnail = firstMenu.images[0];
+  }
+  // Try to find images from ROOT_QUERY placeDetail entries
+  if (!thumbnail) {
+    for (const key of Object.keys(apolloState)) {
+      const val = apolloState[key];
+      if (val?.images && Array.isArray(val.images) && val.images.length > 0) {
+        const img = val.images[0];
+        // Could be a direct URL string or an object with origin/url
+        if (typeof img === 'string' && img.startsWith('http')) {
+          thumbnail = img;
+          break;
+        } else if (img?.origin) {
+          thumbnail = img.origin;
+          break;
+        } else if (img?.url) {
+          thumbnail = img.url;
+          break;
+        }
+      }
+    }
+  }
 
-  // Extract menu items
-  const rawMenus = place.menus || place.menuInfo?.menuList || [];
-  const menuItems = rawMenus.slice(0, 5).map((menu: any) => ({
-    name: menu.name || menu.menuName || '',
-    price: parsePrice(menu.price || menu.unitprice || menu.menuPrice || ''),
-    description: menu.description || '',
-    images: menu.images || [],
-  }));
+  // Menu items are in Menu:{placeId}_0, Menu:{placeId}_1, etc.
+  const menuItems: { name: string; price: number | null; description?: string; images?: string[] }[] = [];
+  for (let i = 0; i < 20; i++) {
+    const menuKey = `Menu:${placeId}_${i}`;
+    const menu = apolloState[menuKey];
+    if (!menu) break;
+    menuItems.push({
+      name: menu.name || '',
+      price: parsePrice(menu.price || ''),
+      description: menu.description || '',
+      images: menu.images || [],
+    });
+    if (menuItems.length >= 5) break;
+  }
 
   return {
     id: placeId,
