@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Restaurant } from '../types/restaurant';
+import { Restaurant, SearchResult } from '../types/restaurant';
 import { extractPlaceId, isNaverMapUrl } from '../utils/parseNaverUrl';
 import { apiFetch } from '../utils/api';
 
@@ -25,6 +25,7 @@ interface UseRestaurantsReturn {
   isLoading: boolean;
   error: string | null;
   addFromUrl: (url: string) => Promise<void>;
+  addFromSearch: (result: SearchResult) => void;
   removeRestaurant: (id: string) => void;
   clearAll: () => void;
 }
@@ -97,6 +98,55 @@ export function useRestaurants(): UseRestaurantsReturn {
     }
   }, [restaurants]);
 
+  const addFromSearch = useCallback((result: SearchResult) => {
+    setError(null);
+
+    if (restaurants.some((r) => r.id === result.id)) {
+      setError('이미 추가된 음식점입니다.');
+      return;
+    }
+
+    // Add restaurant immediately with basic info (no menu)
+    const restaurant: Restaurant = {
+      id: result.id,
+      name: result.name,
+      category: result.category,
+      menuItems: [],
+      thumbnail: '',
+      address: result.address,
+      roadAddress: result.roadAddress,
+      lat: result.lat,
+      lng: result.lng,
+      phone: result.phone,
+      naverMapUrl: result.naverMapUrl,
+    };
+
+    setRestaurants((prev) => {
+      const next = [...prev, restaurant];
+      saveToStorage(next);
+      return next;
+    });
+
+    // Fetch menu/thumbnail in background
+    apiFetch(`/api/place?id=${result.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setRestaurants((prev) => {
+          const next = prev.map((r) =>
+            r.id === result.id
+              ? { ...r, menuItems: data.menuItems || [], thumbnail: data.thumbnail || '' }
+              : r
+          );
+          saveToStorage(next);
+          return next;
+        });
+      })
+      .catch(() => {
+        // Silent failure — restaurant stays with empty menu
+      });
+  }, [restaurants]);
+
   const removeRestaurant = useCallback((id: string) => {
     setRestaurants((prev) => {
       const next = prev.filter((r) => r.id !== id);
@@ -111,5 +161,5 @@ export function useRestaurants(): UseRestaurantsReturn {
     setError(null);
   }, []);
 
-  return { restaurants, isLoading, error, addFromUrl, removeRestaurant, clearAll };
+  return { restaurants, isLoading, error, addFromUrl, addFromSearch, removeRestaurant, clearAll };
 }

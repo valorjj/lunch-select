@@ -42,6 +42,15 @@
     padding: 1.5rem 1.5rem 3rem;
   }
 
+  &__error {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: var(--color-error);
+    font-size: 0.85rem;
+    background: rgba(var(--color-error-rgb), 0.08);
+    border-radius: 8px;
+  }
+
   &__back-button {
     display: inline-flex;
     align-items: center;

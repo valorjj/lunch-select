@@ -5,6 +5,18 @@ export interface MenuItem {
   images?: string[];
 }
 
+export interface SearchResult {
+  id: string;
+  name: string;
+  category: string;
+  address: string;
+  roadAddress: string;
+  lat: number;
+  lng: number;
+  phone: string;
+  naverMapUrl: string;
+}
+
 export interface Restaurant {
   id: string;
   name: string;

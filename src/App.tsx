@@ -3,7 +3,7 @@ import { Restaurant } from './types/restaurant';
 import { useRestaurants } from './hooks/useRestaurants';
 import { useAuth } from './hooks/useAuth';
 import { useBookmarks } from './hooks/useBookmarks';
-import { UrlInput } from './components/UrlInput';
+import { RestaurantSearch } from './components/RestaurantSearch';
 import { RestaurantList } from './components/RestaurantList';
 import { LadderGame } from './components/LadderGame/LadderGame';
 import { ResultScreen } from './components/ResultScreen/ResultScreen';
@@ -28,7 +28,7 @@ function App() {
     name: DEFAULT_OFFICE.name,
   });
 
-  const { restaurants, isLoading, error, addFromUrl, removeRestaurant, clearAll } = useRestaurants();
+  const { restaurants, isLoading, error, addFromSearch, removeRestaurant, clearAll } = useRestaurants();
   const { user, isLoading: authLoading, login, logout } = useAuth();
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks(!!user);
 
@@ -69,17 +69,17 @@ function App() {
         <h1>
           점심 <span>뭐 먹지?</span>
         </h1>
-        <p>네이버 지도에서 음식점을 검색하고 주소창 URL을 복사해서 추가하세요</p>
+        <p>음식점 이름을 검색해서 추가하세요</p>
       </header>
 
       <main className="app__content">
         {phase === 'input' && (
           <div className="fade-in">
-            <UrlInput
-              onAdd={addFromUrl}
-              isLoading={isLoading}
-              error={error}
+            <RestaurantSearch
+              onSelect={addFromSearch}
+              disabled={isLoading}
             />
+            {error && <p className="app__error">{error}</p>}
             <RestaurantList
               restaurants={restaurants}
               onRemove={removeRestaurant}

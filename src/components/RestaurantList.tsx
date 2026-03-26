@@ -32,10 +32,10 @@ export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, 
       <div className="restaurant-list__empty">
         <div className="restaurant-list__empty-icon">&#127858;</div>
         <p className="restaurant-list__empty-text">
-          네이버 지도에서 음식점 URL을 추가해보세요!
+          음식점을 검색해서 추가해보세요!
         </p>
         <p className="restaurant-list__empty-hint">
-          네이버 지도에서 음식점을 검색하고 브라우저 주소창의 URL을 복사해서 위에 붙여넣기 하세요
+          위 검색창에서 음식점 이름을 검색하세요
         </p>
       </div>
     );
