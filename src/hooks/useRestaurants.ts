@@ -94,7 +94,7 @@ export function useRestaurants(storageKey: string = 'lunch-select-restaurants'):
     } finally {
       setIsLoading(false);
     }
-  }, [restaurants]);
+  }, [restaurants, storageKey]);
 
   const addFromSearch = useCallback((result: SearchResult) => {
     setError(null);
@@ -144,7 +144,7 @@ export function useRestaurants(storageKey: string = 'lunch-select-restaurants'):
       .catch(() => {
         // Silent failure — restaurant stays with empty menu
       });
-  }, [restaurants]);
+  }, [restaurants, storageKey]);
 
   const removeRestaurant = useCallback((id: string) => {
     setRestaurants((prev) => {
@@ -152,13 +152,13 @@ export function useRestaurants(storageKey: string = 'lunch-select-restaurants'):
       saveToStorage(storageKey, next);
       return next;
     });
-  }, []);
+  }, [storageKey]);
 
   const clearAll = useCallback(() => {
     setRestaurants([]);
     saveToStorage(storageKey, []);
     setError(null);
-  }, []);
+  }, [storageKey]);
 
   return { restaurants, isLoading, error, addFromUrl, addFromSearch, removeRestaurant, clearAll };
 }
