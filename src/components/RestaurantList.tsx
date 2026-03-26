@@ -1,6 +1,7 @@
 import React from 'react';
 import { Restaurant } from '../types/restaurant';
 import { RestaurantCard } from './RestaurantCard';
+import { SkeletonCard } from './SkeletonCard';
 import { APP_CONFIG } from '../config/defaults';
 import './RestaurantList.scss';
 
@@ -8,10 +9,21 @@ interface RestaurantListProps {
   restaurants: Restaurant[];
   onRemove: (id: string) => void;
   onStartGame: () => void;
+  isLoading?: boolean;
 }
 
-export function RestaurantList({ restaurants, onRemove, onStartGame }: RestaurantListProps) {
+export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading }: RestaurantListProps) {
   const canStartGame = restaurants.length >= APP_CONFIG.minRestaurants;
+
+  if (restaurants.length === 0 && isLoading) {
+    return (
+      <div className="restaurant-list">
+        <div className="restaurant-list__grid">
+          <SkeletonCard />
+        </div>
+      </div>
+    );
+  }
 
   if (restaurants.length === 0) {
     return (
@@ -42,6 +54,7 @@ export function RestaurantList({ restaurants, onRemove, onStartGame }: Restauran
             index={index}
           />
         ))}
+        {isLoading && <SkeletonCard />}
       </div>
 
       <button

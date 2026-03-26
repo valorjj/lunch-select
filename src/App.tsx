@@ -75,6 +75,7 @@ function App() {
               restaurants={restaurants}
               onRemove={removeRestaurant}
               onStartGame={handleStartGame}
+              isLoading={isLoading}
             />
           </div>
         )}

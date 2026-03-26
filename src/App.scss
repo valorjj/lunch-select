@@ -59,6 +59,22 @@
   animation: fadeIn 0.4s ease-out;
 }
 
+// Mobile responsiveness
+@media (max-width: 480px) {
+  .app {
+    &__header {
+      padding: 1.5rem 0.75rem 0.75rem;
+
+      h1 { font-size: 1.5rem; }
+      p { font-size: 0.85rem; }
+    }
+
+    &__content {
+      padding: 1rem 0.75rem 2rem;
+    }
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

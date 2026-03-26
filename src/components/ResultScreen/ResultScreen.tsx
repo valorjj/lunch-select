@@ -42,7 +42,7 @@ export function ResultScreen({
     [startingPoint.lat, startingPoint.lng]
   );
 
-  const { directions, isLoading: directionsLoading } = useDirections(start, goal);
+  const { directions, isLoading: directionsLoading, error: directionsError } = useDirections(start, goal);
 
   const mapCenter = useMemo(
     () => ({
@@ -125,6 +125,15 @@ export function ResultScreen({
 
       {directionsLoading && (
         <div className="result-screen__loading">경로를 찾는 중...</div>
+      )}
+
+      {directionsError && !directionsLoading && (
+        <div className="result-screen__directions-error">
+          <p>경로 정보를 가져오지 못했어요</p>
+          <p className="result-screen__directions-error-hint">
+            네이버 지도에서 직접 검색해보세요
+          </p>
+        </div>
       )}
 
       {/* Starting point config */}

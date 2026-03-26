@@ -9,6 +9,33 @@
     width: 100%;
     height: 350px;
   }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    background: var(--color-surface);
+    text-align: center;
+    gap: 0.25rem;
+
+    p {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+    }
+  }
+
+  &__error-hint {
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .naver-map__container {
+    height: 250px;
+  }
 }
 
 // Custom marker style (injected as HTML into naver maps)
