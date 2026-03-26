@@ -8,9 +8,10 @@ const SEARCH_API_BASE = '';
 interface RestaurantSearchProps {
   onSelect: (result: SearchResult) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
-export function RestaurantSearch({ onSelect, disabled }: RestaurantSearchProps) {
+export function RestaurantSearch({ onSelect, disabled, placeholder }: RestaurantSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -85,7 +86,7 @@ export function RestaurantSearch({ onSelect, disabled }: RestaurantSearchProps) 
         <input
           type="text"
           className="restaurant-search__field"
-          placeholder="음식점 이름으로 검색하세요 (예: 역삼 김치찌개)"
+          placeholder={placeholder || "음식점 이름으로 검색하세요 (예: 역삼 김치찌개)"}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setShowDropdown(true)}

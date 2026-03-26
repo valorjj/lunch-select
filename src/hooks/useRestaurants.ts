@@ -3,20 +3,18 @@ import { Restaurant, SearchResult } from '../types/restaurant';
 import { extractPlaceId, isNaverMapUrl } from '../utils/parseNaverUrl';
 import { apiFetch } from '../utils/api';
 
-const STORAGE_KEY = 'lunch-select-restaurants';
-
-function loadSaved(): Restaurant[] {
+function loadSaved(storageKey: string): Restaurant[] {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
   } catch {
     return [];
   }
 }
 
-function saveToStorage(restaurants: Restaurant[]) {
+function saveToStorage(storageKey: string, restaurants: Restaurant[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(restaurants));
+    localStorage.setItem(storageKey, JSON.stringify(restaurants));
   } catch { /* ignore quota errors */ }
 }
 
@@ -30,8 +28,8 @@ interface UseRestaurantsReturn {
   clearAll: () => void;
 }
 
-export function useRestaurants(): UseRestaurantsReturn {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(loadSaved);
+export function useRestaurants(storageKey: string = 'lunch-select-restaurants'): UseRestaurantsReturn {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(() => loadSaved(storageKey));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,7 +86,7 @@ export function useRestaurants(): UseRestaurantsReturn {
 
       setRestaurants((prev) => {
         const next = [...prev, restaurant];
-        saveToStorage(next);
+        saveToStorage(storageKey, next);
         return next;
       });
     } catch (err: any) {
@@ -123,7 +121,7 @@ export function useRestaurants(): UseRestaurantsReturn {
 
     setRestaurants((prev) => {
       const next = [...prev, restaurant];
-      saveToStorage(next);
+      saveToStorage(storageKey, next);
       return next;
     });
 
@@ -139,7 +137,7 @@ export function useRestaurants(): UseRestaurantsReturn {
               ? { ...r, menuItems: data.menuItems || [], thumbnail: data.thumbnail || '' }
               : r
           );
-          saveToStorage(next);
+          saveToStorage(storageKey, next);
           return next;
         });
       })
@@ -151,14 +149,14 @@ export function useRestaurants(): UseRestaurantsReturn {
   const removeRestaurant = useCallback((id: string) => {
     setRestaurants((prev) => {
       const next = prev.filter((r) => r.id !== id);
-      saveToStorage(next);
+      saveToStorage(storageKey, next);
       return next;
     });
   }, []);
 
   const clearAll = useCallback(() => {
     setRestaurants([]);
-    saveToStorage([]);
+    saveToStorage(storageKey, []);
     setError(null);
   }, []);
 

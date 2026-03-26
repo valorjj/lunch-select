@@ -12,9 +12,12 @@ interface RestaurantListProps {
   isLoading?: boolean;
   isBookmarked?: (placeId: string) => boolean;
   onToggleBookmark?: (placeId: string) => void;
+  emptyIcon?: string;
+  emptyText?: string;
+  emptyHint?: string;
 }
 
-export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, isBookmarked, onToggleBookmark }: RestaurantListProps) {
+export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, isBookmarked, onToggleBookmark, emptyIcon, emptyText, emptyHint }: RestaurantListProps) {
   const canStartGame = restaurants.length >= APP_CONFIG.minRestaurants;
 
   if (restaurants.length === 0 && isLoading) {
@@ -30,12 +33,12 @@ export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, 
   if (restaurants.length === 0) {
     return (
       <div className="restaurant-list__empty">
-        <div className="restaurant-list__empty-icon">&#127858;</div>
+        <div className="restaurant-list__empty-icon">{emptyIcon || '\uD83C\uDF5A'}</div>
         <p className="restaurant-list__empty-text">
-          음식점을 검색해서 추가해보세요!
+          {emptyText || '음식점을 검색해서 추가해보세요!'}
         </p>
         <p className="restaurant-list__empty-hint">
-          위 검색창에서 음식점 이름을 검색하세요
+          {emptyHint || '위 검색창에서 음식점 이름을 검색하세요'}
         </p>
       </div>
     );
