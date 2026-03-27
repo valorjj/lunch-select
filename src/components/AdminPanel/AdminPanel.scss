@@ -46,6 +46,16 @@
     text-align: center;
   }
 
+  &__auto-count {
+    padding: 0.35rem 0.6rem;
+    background: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
   &__add {
     background: var(--color-surface);
     border: 1px solid var(--color-border);

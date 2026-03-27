@@ -52,7 +52,7 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
     const res = await apiFetch('/api/admin/words', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ word: trimmed, syllableCount: newSyllable, theme: newTheme }),
+      body: JSON.stringify({ word: trimmed, syllableCount: trimmed.length, theme: newTheme }),
     });
     if (res.ok) {
       setNewWord('');
@@ -135,9 +135,9 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
             <option value="food">음식</option>
             <option value="general">일반</option>
           </select>
-          <select value={newSyllable} onChange={(e) => setNewSyllable(Number(e.target.value))} className="admin-panel__select">
-            {[2, 3, 4, 5].map(n => <option key={n} value={n}>{n}글자</option>)}
-          </select>
+          {newWord.trim() && (
+            <span className="admin-panel__auto-count">{newWord.trim().length}글자</span>
+          )}
           <button className="admin-panel__btn admin-panel__btn--primary" onClick={handleAdd}>추가</button>
         </div>
         <button className="admin-panel__btn admin-panel__btn--text" onClick={() => setShowBulk(!showBulk)}>
