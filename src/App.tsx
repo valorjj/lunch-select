@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Restaurant } from './types/restaurant';
 import { useRestaurants } from './hooks/useRestaurants';
 import { useCompanyLocation } from './hooks/useCompanyLocation';
@@ -14,6 +14,7 @@ import { WordGame } from './components/WordGame/WordGame';
 import { BookmarkSection } from './components/BookmarkSection/BookmarkSection';
 import { VisitorCounter } from './components/VisitorCounter/VisitorCounter';
 import { AdminPanel } from './components/AdminPanel/AdminPanel';
+import { decodeSharedResult } from './components/SharePanel/SharePanel';
 import './App.scss';
 
 type AppPhase = 'input' | 'game' | 'result';
@@ -24,6 +25,23 @@ function App() {
   const [cafePhase, setCafePhase] = useState<AppPhase>('input');
   const [winner, setWinner] = useState<Restaurant | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [sharedMode, setSharedMode] = useState(false);
+
+  // Check for shared result in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resultParam = params.get('result');
+    if (resultParam) {
+      const shared = decodeSharedResult(resultParam);
+      if (shared) {
+        setWinner(shared);
+        setRestaurantPhase('result');
+        setSharedMode(true);
+      }
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const companyLoc = useCompanyLocation();
   const restaurantStore = useRestaurants('lunch-select-restaurants');
@@ -56,6 +74,7 @@ function App() {
 
   const handleStartOver = useCallback(() => {
     setWinner(null);
+    setSharedMode(false);
     store.clearAll();
     setPhase('input');
   }, [store, setPhase]);
