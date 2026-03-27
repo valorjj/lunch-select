@@ -222,6 +222,9 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
   return (
     <div className="admin-panel">
       <GlobalLoader visible={busy} message={busyMessage} />
+      <h1 className="admin-panel__logo" onClick={onClose}>
+        점심 <span>뭐 먹지?</span>
+      </h1>
       <div className="admin-panel__header">
         <h2>Admin</h2>
         <div className="admin-panel__tabs">
