@@ -68,3 +68,18 @@
     &:hover { border-color: var(--color-primary); color: var(--color-primary); }
   }
 }
+
+@media (max-width: 480px) {
+  .share-panel {
+    &__link {
+      flex-direction: column;
+    }
+    &__url {
+      font-size: 0.85rem;
+    }
+    &__generate, &__native {
+      padding: 0.85rem;
+      font-size: 0.9rem;
+    }
+  }
+}

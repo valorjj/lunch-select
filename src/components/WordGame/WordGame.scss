@@ -269,5 +269,11 @@
       width: 100%;
       text-align: center;
     }
+
+    &__keyboard-row { gap: 3px; }
+
+    &__key--shift {
+      min-width: 60px;
+    }
   }
 }

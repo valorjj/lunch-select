@@ -25,8 +25,6 @@ export function SharePanel({ winner, restaurants }: SharePanelProps) {
 
   const shareUrl = useMemo(() => buildShareUrl(winner), [winner]);
 
-  const shareTitle = `오늘의 점심은 "${winner.name}"!`;
-
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -34,18 +32,6 @@ export function SharePanel({ winner, restaurants }: SharePanelProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch { /* ignore */ }
   }, [shareUrl]);
-
-  const handleNativeShare = useCallback(async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: '점심 뭐 먹지?',
-          text: shareTitle,
-          url: shareUrl,
-        });
-      } catch { /* user cancelled */ }
-    }
-  }, [shareTitle, shareUrl]);
 
   return (
     <div className="share-panel">
@@ -55,11 +41,6 @@ export function SharePanel({ winner, restaurants }: SharePanelProps) {
       >
         {copied ? '복사됨! ✓' : '결과 복사하기'}
       </button>
-      {'share' in navigator && (
-        <button className="share-panel__native" onClick={handleNativeShare}>
-          공유하기
-        </button>
-      )}
     </div>
   );
 }

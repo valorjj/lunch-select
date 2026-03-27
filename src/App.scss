@@ -120,6 +120,10 @@
     &__content {
       padding: 1rem 0.75rem 2rem;
     }
+
+    &__header-top { padding: 0.5rem 0.75rem 0; }
+    &__header-right { gap: 0.35rem; }
+    &__admin-btn { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
   }
 }
 
