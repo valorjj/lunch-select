@@ -4,7 +4,6 @@ import { useRestaurants } from './hooks/useRestaurants';
 import { useCompanyLocation } from './hooks/useCompanyLocation';
 import { useAuth } from './hooks/useAuth';
 import { useBookmarks } from './hooks/useBookmarks';
-import { CompanyLocation } from './components/CompanyLocation/CompanyLocation';
 import { CategoryTabs, CategoryTab } from './components/CategoryTabs/CategoryTabs';
 import { RestaurantSearch } from './components/RestaurantSearch';
 import { RestaurantList } from './components/RestaurantList';
@@ -12,6 +11,7 @@ import { LadderGame } from './components/LadderGame/LadderGame';
 import { ResultScreen } from './components/ResultScreen/ResultScreen';
 import { AuthButton } from './components/AuthButton/AuthButton';
 import { WordGame } from './components/WordGame/WordGame';
+import { BookmarkSection } from './components/BookmarkSection/BookmarkSection';
 import './App.scss';
 
 type AppPhase = 'input' | 'game' | 'result';
@@ -26,7 +26,7 @@ function App() {
   const restaurantStore = useRestaurants('lunch-select-restaurants');
   const cafeStore = useRestaurants('lunch-select-cafes');
   const { user, isLoading: authLoading, login, logout } = useAuth();
-  const { isBookmarked, toggle: toggleBookmark } = useBookmarks(!!user);
+  const { bookmarks, isBookmarked, toggle: toggleBookmark } = useBookmarks(!!user);
 
   // Active tab state
   const isRestaurant = activeTab === 'restaurant';
@@ -95,15 +95,6 @@ function App() {
       </header>
 
       <main className="app__content">
-        {!isGame && (
-          <CompanyLocation
-            location={companyLoc.location}
-            savedLocations={companyLoc.savedLocations}
-            onUpdate={companyLoc.updateLocation}
-            onSave={companyLoc.addSavedLocation}
-            onRemoveSaved={companyLoc.removeSavedLocation}
-          />
-        )}
 
         <CategoryTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -121,13 +112,18 @@ function App() {
               placeholder={searchPlaceholder}
             />
             {store.error && <p className="app__error">{store.error}</p>}
+            <BookmarkSection
+              bookmarks={bookmarks}
+              onAddToList={store.addFromSearch}
+              existingIds={new Set(store.restaurants.map(r => r.id))}
+            />
             <RestaurantList
               restaurants={store.restaurants}
               onRemove={store.removeRestaurant}
               onStartGame={handleStartGame}
               isLoading={store.isLoading}
-              isBookmarked={user ? isBookmarked : undefined}
-              onToggleBookmark={user ? toggleBookmark : undefined}
+              isBookmarked={isBookmarked}
+              onToggleBookmark={toggleBookmark}
               emptyIcon={isRestaurant ? '\uD83C\uDF5A' : '\u2615'}
               emptyText={isRestaurant ? '음식점을 검색해서 추가해보세요!' : '카페를 검색해서 추가해보세요!'}
               emptyHint={isRestaurant ? '위 검색창에서 음식점 이름을 검색하세요' : '위 검색창에서 카페 이름을 검색하세요'}

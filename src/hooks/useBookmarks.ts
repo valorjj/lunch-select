@@ -1,59 +1,67 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch } from '../utils/api';
+import { Restaurant } from '../types/restaurant';
 
-interface BookmarkItem {
-  id: number;
-  naverPlaceId: string;
-  name: string;
-  category: string;
-  thumbnail: string;
-  roadAddress: string;
-  memo: string;
-}
+const STORAGE_KEY = 'lunch-select-bookmarks';
 
 interface UseBookmarksReturn {
-  bookmarks: BookmarkItem[];
+  bookmarks: Restaurant[];
   isLoading: boolean;
   isBookmarked: (placeId: string) => boolean;
-  toggle: (placeId: string) => Promise<void>;
+  toggle: (placeId: string, restaurant?: Restaurant) => void;
+  addFromBookmark: (restaurant: Restaurant) => void;
   refresh: () => void;
 }
 
+function loadBookmarks(): Restaurant[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveBookmarks(bookmarks: Restaurant[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+}
+
 export function useBookmarks(isLoggedIn: boolean): UseBookmarksReturn {
-  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [bookmarks, setBookmarks] = useState<Restaurant[]>(loadBookmarks);
+  const [isLoading] = useState(false);
 
   const refresh = useCallback(() => {
-    if (!isLoggedIn) return;
-    setIsLoading(true);
-    apiFetch('/api/bookmarks')
-      .then((res) => res.ok ? res.json() : [])
-      .then((data) => setBookmarks(data))
-      .catch(() => setBookmarks([]))
-      .finally(() => setIsLoading(false));
-  }, [isLoggedIn]);
+    setBookmarks(loadBookmarks());
+  }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const isBookmarked = useCallback(
-    (placeId: string) => bookmarks.some((b) => b.naverPlaceId === placeId),
+    (placeId: string) => bookmarks.some((b) => b.id === placeId),
     [bookmarks]
   );
 
-  const toggle = useCallback(async (placeId: string) => {
-    if (!isLoggedIn) return;
+  const toggle = useCallback((placeId: string, restaurant?: Restaurant) => {
+    setBookmarks((prev) => {
+      const exists = prev.some((b) => b.id === placeId);
+      let next: Restaurant[];
+      if (exists) {
+        next = prev.filter((b) => b.id !== placeId);
+      } else if (restaurant) {
+        next = [...prev, restaurant];
+      } else {
+        return prev;
+      }
+      saveBookmarks(next);
+      return next;
+    });
+  }, []);
 
-    if (isBookmarked(placeId)) {
-      await apiFetch(`/api/bookmarks/${placeId}`, { method: 'DELETE' });
-    } else {
-      await apiFetch('/api/bookmarks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ naverPlaceId: placeId }),
-      });
-    }
-    refresh();
-  }, [isLoggedIn, isBookmarked, refresh]);
+  const addFromBookmark = useCallback((restaurant: Restaurant) => {
+    // This is a convenience method; the actual adding to the game list
+    // is handled by the parent component
+  }, []);
 
-  return { bookmarks, isLoading, isBookmarked, toggle, refresh };
+  return { bookmarks, isLoading, isBookmarked, toggle, addFromBookmark, refresh };
 }

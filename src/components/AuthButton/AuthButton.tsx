@@ -20,7 +20,13 @@ export function AuthButton({ user, isLoading, onLogin, onLogout }: AuthButtonPro
   const [showMenu, setShowMenu] = useState(false);
   const [showProviders, setShowProviders] = useState(false);
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <div className="auth-button auth-button--loading">
+        <div className="auth-button__placeholder" />
+      </div>
+    );
+  }
 
   if (user) {
     return (

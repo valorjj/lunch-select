@@ -7,7 +7,7 @@ interface RestaurantCardProps {
   onRemove: (id: string) => void;
   index: number;
   isBookmarked?: boolean;
-  onToggleBookmark?: (placeId: string) => void;
+  onToggleBookmark?: (placeId: string, restaurant: Restaurant) => void;
 }
 
 function formatPrice(price: number | null): string {
@@ -22,7 +22,7 @@ export function RestaurantCard({ restaurant, onRemove, index, isBookmarked, onTo
         {onToggleBookmark && /^\d+$/.test(restaurant.id) && (
           <button
             className={`restaurant-card__bookmark ${isBookmarked ? 'restaurant-card__bookmark--active' : ''}`}
-            onClick={() => onToggleBookmark(restaurant.id)}
+            onClick={() => onToggleBookmark(restaurant.id, restaurant)}
             title={isBookmarked ? '북마크 해제' : '북마크'}
           >
             {isBookmarked ? '\u2605' : '\u2606'}

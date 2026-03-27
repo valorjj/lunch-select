@@ -11,7 +11,7 @@ interface RestaurantListProps {
   onStartGame: () => void;
   isLoading?: boolean;
   isBookmarked?: (placeId: string) => boolean;
-  onToggleBookmark?: (placeId: string) => void;
+  onToggleBookmark?: (placeId: string, restaurant: Restaurant) => void;
   emptyIcon?: string;
   emptyText?: string;
   emptyHint?: string;

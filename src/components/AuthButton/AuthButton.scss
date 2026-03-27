@@ -1,5 +1,15 @@
 .auth-button {
   position: relative;
+  min-height: 38px;
+
+  &--loading {
+    visibility: hidden;
+  }
+
+  &__placeholder {
+    width: 80px;
+    height: 38px;
+  }
 
   &__login {
     padding: 0.5rem 1rem;
