@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { SearchResult } from '../types/restaurant';
+import { GlobalLoader } from './GlobalLoader/GlobalLoader';
 import './RestaurantSearch.scss';
 
 const SEARCH_API_BASE = '';
@@ -106,6 +107,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
 
   return (
     <div className="restaurant-search">
+      <GlobalLoader visible={isSearching} message="맛집 검색 중..." />
       <form className="restaurant-search__form" onSubmit={handleSubmit}>
         <input
           type="text"
