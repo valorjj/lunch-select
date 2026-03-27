@@ -1,0 +1,524 @@
+.gacha-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__machine {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 280px;
+    user-select: none;
+  }
+
+  // === Machine cap ===
+  &__cap {
+    width: 120px;
+    height: 30px;
+    background: linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 100%);
+    border-radius: 12px 12px 0 0;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  &__cap-knob {
+    width: 28px;
+    height: 28px;
+    background: radial-gradient(circle at 35% 35%, #FF6B35, #CC4A1A);
+    border-radius: 50%;
+    border: 3px solid #B0B0B0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    position: relative;
+    top: -10px;
+  }
+
+  // === Glass globe ===
+  &__globe {
+    width: 240px;
+    height: 220px;
+    background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(240, 245, 255, 0.9) 50%,
+      rgba(220, 230, 245, 0.85) 100%
+    );
+    border: 3px solid #C0C0C0;
+    border-radius: 50% 50% 20% 20% / 60% 60% 15% 15%;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    box-shadow:
+      inset 0 0 30px rgba(255, 255, 255, 0.5),
+      0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.1s;
+
+    &--shaking {
+      animation: machineShake 0.15s ease-in-out infinite;
+    }
+  }
+
+  &__globe-shine {
+    position: absolute;
+    top: 10%;
+    left: 15%;
+    width: 35%;
+    height: 40%;
+    background: radial-gradient(ellipse, rgba(255, 255, 255, 0.7) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  // === Capsules ===
+  &__capsule {
+    position: absolute;
+    border-radius: 50%;
+    z-index: 5;
+    animation: capsuleFloat 3s ease-in-out infinite;
+    transition: opacity 0.3s, transform 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--tumble {
+      animation: capsuleTumble 0.3s ease-in-out infinite;
+    }
+
+    &--hidden {
+      opacity: 0;
+      transform: scale(0);
+    }
+  }
+
+  &__capsule-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: var(--capsule-color);
+    border-radius: 50% 50% 0 0;
+    opacity: 0.9;
+    filter: brightness(1.1);
+  }
+
+  &__capsule-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 52%;
+    background: var(--capsule-color);
+    border-radius: 0 0 50% 50%;
+    opacity: 0.75;
+    filter: brightness(0.85);
+  }
+
+  &__capsule-label {
+    position: relative;
+    z-index: 6;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+
+  // === Base / dispenser ===
+  &__base {
+    width: 200px;
+    height: 70px;
+    background: linear-gradient(180deg, #D0D0D0 0%, #A8A8A8 100%);
+    border-radius: 0 0 16px 16px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  &__chute {
+    width: 60px;
+    height: 40px;
+    background: #333;
+    border-radius: 0 0 12px 12px;
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    overflow: hidden;
+  }
+
+  &__chute-door {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, #555, #777, #555);
+    position: absolute;
+    bottom: 0;
+    border-radius: 0 0 12px 12px;
+  }
+
+  // === Lever ===
+  &__lever {
+    position: absolute;
+    right: -35px;
+    top: 5px;
+    cursor: pointer;
+    z-index: 3;
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+    &:hover .gacha-game__lever-handle {
+      transform: scale(1.1);
+      filter: brightness(1.1);
+    }
+
+    &--pulled {
+      transform: rotate(30deg);
+      transform-origin: top center;
+    }
+  }
+
+  &__lever-stick {
+    width: 6px;
+    height: 40px;
+    background: linear-gradient(180deg, #888, #666);
+    border-radius: 3px;
+    margin: 0 auto;
+  }
+
+  &__lever-handle {
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 35% 35%, #FF4444, #CC0000);
+    border-radius: 50%;
+    border: 2px solid #AA0000;
+    margin: -2px auto 0;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, filter 0.2s;
+  }
+
+  // === Output area ===
+  &__output {
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 280px;
+  }
+
+  // === Dispensed capsule ===
+  &__dispensed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--dropping {
+      animation: capsuleDrop 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    &--bouncing {
+      animation: capsuleBounce 0.8s ease-out forwards;
+    }
+
+    &--opening {
+      animation: capsuleWobble 0.6s ease-in-out;
+    }
+
+    &--reveal {
+      animation: none;
+    }
+  }
+
+  &__dispensed-capsule {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+    &--cracking {
+      animation: capsuleCrack 0.6s ease-in-out forwards;
+    }
+  }
+
+  &__dispensed-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: var(--capsule-color);
+    border-radius: 50% 50% 0 0;
+    filter: brightness(1.1);
+  }
+
+  &__dispensed-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 52%;
+    background: var(--capsule-color);
+    border-radius: 0 0 50% 50%;
+    filter: brightness(0.85);
+  }
+
+  &__dispensed-question {
+    position: relative;
+    z-index: 2;
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  // === Reveal ===
+  &__reveal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: revealPop 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+  }
+
+  &__reveal-shell {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+
+    &--left {
+      left: -50px;
+      background: var(--capsule-color);
+      filter: brightness(1.1);
+      animation: shellFlyLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    &--right {
+      right: -50px;
+      background: var(--capsule-color);
+      filter: brightness(0.85);
+      animation: shellFlyRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+  }
+
+  &__reveal-content {
+    text-align: center;
+    animation: revealFadeUp 0.6s ease-out 0.2s both;
+  }
+
+  &__reveal-star {
+    font-size: 32px;
+    margin-bottom: 4px;
+    animation: revealSpin 1s ease-out;
+  }
+
+  &__reveal-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--color-text);
+    line-height: 1.3;
+    max-width: 200px;
+    word-break: keep-all;
+  }
+
+  &__reveal-category {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  // === Start button ===
+  &__start-btn {
+    margin-top: 1.5rem;
+    padding: 1rem 3rem;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(var(--color-primary-rgb), 0.3);
+    animation: pulse 2s ease-in-out infinite;
+
+    &:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 24px rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
+  }
+
+  // === Winner banner ===
+  &__winner-banner {
+    margin-top: 1rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    color: #fff;
+    border-radius: 16px;
+    font-size: 1.2rem;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(var(--color-primary-rgb), 0.3);
+
+    strong {
+      display: inline;
+      margin: 0 0.25rem;
+    }
+  }
+
+  &__winner-icon {
+    margin-right: 0.25rem;
+  }
+}
+
+// === Keyframe animations ===
+
+@keyframes machineShake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-3px) rotate(-0.5deg); }
+  75% { transform: translateX(3px) rotate(0.5deg); }
+}
+
+@keyframes capsuleFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-6px) rotate(5deg); }
+  50% { transform: translateY(-2px) rotate(-3deg); }
+  75% { transform: translateY(-8px) rotate(-5deg); }
+}
+
+@keyframes capsuleTumble {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(8px, -10px) rotate(90deg); }
+  50% { transform: translate(-5px, 5px) rotate(180deg); }
+  75% { transform: translate(6px, -8px) rotate(270deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
+}
+
+@keyframes capsuleDrop {
+  0% {
+    transform: translateY(-80px) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes capsuleBounce {
+  0% { transform: translateY(0); }
+  20% { transform: translateY(-25px); }
+  40% { transform: translateY(0); }
+  60% { transform: translateY(-12px); }
+  80% { transform: translateY(0); }
+  90% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes capsuleWobble {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-15deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(4deg); }
+}
+
+@keyframes capsuleCrack {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  50% { transform: scale(1.1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 0 20px rgba(255, 200, 0, 0.4); }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes revealPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shellFlyLeft {
+  0% { transform: translate(50px, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-20px, 30px) rotate(-120deg); opacity: 0; }
+}
+
+@keyframes shellFlyRight {
+  0% { transform: translate(-50px, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(20px, 30px) rotate(120deg); opacity: 0; }
+}
+
+@keyframes revealFadeUp {
+  0% { transform: translateY(15px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes revealSpin {
+  0% { transform: rotate(0deg) scale(0); }
+  50% { transform: rotate(180deg) scale(1.3); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+// === Mobile responsive ===
+@media (max-width: 480px) {
+  .gacha-game {
+    &__machine {
+      width: 240px;
+    }
+
+    &__globe {
+      width: 200px;
+      height: 180px;
+    }
+
+    &__base {
+      width: 170px;
+      height: 60px;
+    }
+
+    &__output {
+      height: 120px;
+      width: 240px;
+    }
+
+    &__start-btn {
+      padding: 0.75rem 2rem;
+      font-size: 1.1rem;
+    }
+
+    &__winner-banner {
+      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+    }
+
+    &__reveal-name {
+      font-size: 1.1rem;
+      max-width: 160px;
+    }
+
+    &__capsule {
+      transform: scale(0.85);
+    }
+  }
+}

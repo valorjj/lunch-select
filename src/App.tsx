@@ -8,6 +8,7 @@ import { CategoryTabs, CategoryTab } from './components/CategoryTabs/CategoryTab
 import { RestaurantSearch } from './components/RestaurantSearch';
 import { RestaurantList } from './components/RestaurantList';
 import { LadderGame } from './components/LadderGame/LadderGame';
+import { GachaGame } from './components/GachaGame/GachaGame';
 import { ResultScreen } from './components/ResultScreen/ResultScreen';
 import { AuthButton } from './components/AuthButton/AuthButton';
 import { WordGame } from './components/WordGame/WordGame';
@@ -18,6 +19,7 @@ import { decodeSharedResult } from './components/SharePanel/SharePanel';
 import './App.scss';
 
 type AppPhase = 'input' | 'game' | 'result';
+type GameType = 'ladder' | 'gacha';
 
 function App() {
   const [activeTab, setActiveTab] = useState<CategoryTab>('restaurant');
@@ -25,6 +27,7 @@ function App() {
   const [cafePhase, setCafePhase] = useState<AppPhase>('input');
   const [winner, setWinner] = useState<Restaurant | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [gameType, setGameType] = useState<GameType>('gacha');
 
   // Check for shared result in URL
   useEffect(() => {
@@ -160,10 +163,31 @@ function App() {
             <button className="app__back-button" onClick={handleBackToInput}>
               &#8592; 뒤로 가기
             </button>
-            <LadderGame
-              restaurants={store.restaurants}
-              onComplete={handleGameComplete}
-            />
+            <div className="app__game-selector">
+              <button
+                className={`app__game-type-btn ${gameType === 'gacha' ? 'app__game-type-btn--active' : ''}`}
+                onClick={() => setGameType('gacha')}
+              >
+                &#127922; 뽑기
+              </button>
+              <button
+                className={`app__game-type-btn ${gameType === 'ladder' ? 'app__game-type-btn--active' : ''}`}
+                onClick={() => setGameType('ladder')}
+              >
+                &#128206; 사다리
+              </button>
+            </div>
+            {gameType === 'gacha' ? (
+              <GachaGame
+                restaurants={store.restaurants}
+                onComplete={handleGameComplete}
+              />
+            ) : (
+              <LadderGame
+                restaurants={store.restaurants}
+                onComplete={handleGameComplete}
+              />
+            )}
           </div>
         )}
 
