@@ -6,6 +6,7 @@ interface GameSettingsProps {
   theme: 'food' | 'general';
   onThemeChange: (theme: 'food' | 'general') => void;
   onNewGame: () => void;
+  availableCounts?: number[];
 }
 
 export function GameSettings({
@@ -14,21 +15,26 @@ export function GameSettings({
   theme,
   onThemeChange,
   onNewGame,
+  availableCounts,
 }: GameSettingsProps) {
   return (
     <div className="word-game__settings">
       <div className="word-game__settings-group">
         <span className="word-game__settings-label">글자 수</span>
         <div className="word-game__settings-options">
-          {[2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              className={`word-game__settings-btn ${syllableCount === n ? 'word-game__settings-btn--active' : ''}`}
-              onClick={() => onSyllableCountChange(n)}
-            >
-              {n}
-            </button>
-          ))}
+          {[2, 3, 4, 5].map((n) => {
+            const available = !availableCounts || availableCounts.includes(n);
+            return (
+              <button
+                key={n}
+                className={`word-game__settings-btn ${syllableCount === n ? 'word-game__settings-btn--active' : ''}`}
+                onClick={() => onSyllableCountChange(n)}
+                disabled={!available}
+              >
+                {n}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div className="word-game__settings-group">

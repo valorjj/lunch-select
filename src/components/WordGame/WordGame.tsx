@@ -45,33 +45,35 @@ function pickRandomWord(words: string[]): string {
   return words[Math.floor(Math.random() * words.length)];
 }
 
-// Merge local and remote words, preferring remote if available
-function mergeWordLists(
-  local: Record<number, string[]>,
-  remote: Record<string, string[]> | null,
+// Use backend words if available, otherwise fall back to local
+function getWordList(
+  theme: 'food' | 'general',
+  remoteWords: Record<string, Record<string, string[]>>,
+  backendLoaded: boolean,
 ): Record<number, string[]> {
-  if (!remote) return local;
-  const merged: Record<number, string[]> = { ...local };
-  for (const [key, words] of Object.entries(remote)) {
-    const count = Number(key);
-    const existing = new Set(merged[count] || []);
-    words.forEach((w) => existing.add(w));
-    merged[count] = Array.from(existing);
+  const remote = remoteWords[theme];
+  if (backendLoaded && remote) {
+    // Backend available — use only backend words
+    const result: Record<number, string[]> = {};
+    for (const [key, words] of Object.entries(remote)) {
+      result[Number(key)] = words;
+    }
+    return result;
   }
-  return merged;
+  // Backend not available — fall back to local
+  return theme === 'food' ? FOOD_WORDS : GENERAL_WORDS;
 }
 
 export function WordGame() {
-  const [syllableCount, setSyllableCount] = useState(3);
+  const [syllableCount, setSyllableCount] = useState(2);
   const [theme, setTheme] = useState<'food' | 'general'>('food');
   const [remoteWords, setRemoteWords] = useState<Record<string, Record<string, string[]>>>({});
-  const [solution, setSolution] = useState(() => {
-    const words = FOOD_WORDS[3] || [];
-    return words.length > 0 ? words[Math.floor(Math.random() * words.length)] : '비빔밥';
-  });
+  const [backendLoaded, setBackendLoaded] = useState(false);
+  const [solution, setSolution] = useState('');
 
   // Fetch words from backend on mount
   useEffect(() => {
+    let loaded = 0;
     const fetchRemote = async (t: string) => {
       try {
         const res = await apiFetch(`/api/words?theme=${t}`);
@@ -80,6 +82,10 @@ export function WordGame() {
           setRemoteWords((prev) => ({ ...prev, [t]: data }));
         }
       } catch { /* use local fallback */ }
+      finally {
+        loaded++;
+        if (loaded >= 2) setBackendLoaded(true);
+      }
     };
     fetchRemote('food');
     fetchRemote('general');
@@ -107,14 +113,42 @@ export function WordGame() {
     return statuses;
   }, [guesses]);
 
+  const currentWordList = useMemo(
+    () => getWordList(theme, remoteWords, backendLoaded),
+    [theme, remoteWords, backendLoaded]
+  );
+
+  const availableCounts = useMemo(
+    () => [2, 3, 4, 5].filter((n) => (currentWordList[n] || []).length > 0),
+    [currentWordList]
+  );
+
+  // Auto-start game once backend words are loaded
+  useEffect(() => {
+    if (backendLoaded) {
+      const wordList = getWordList(theme, remoteWords, true);
+      const counts = [2, 3, 4, 5].filter((n) => (wordList[n] || []).length > 0);
+      const count = counts.includes(syllableCount) ? syllableCount : counts[0] || 2;
+      if (count !== syllableCount) setSyllableCount(count);
+      const words = wordList[count] || [];
+      if (words.length > 0) {
+        setSolution(pickRandomWord(words));
+        setGuesses([]);
+        setCurrentGuess([]);
+        setGameStatus('playing');
+        setMessage(null);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backendLoaded]);
+
   const startNewGame = useCallback((sc?: number, th?: 'food' | 'general') => {
     const count = sc ?? syllableCount;
     const wordTheme = th ?? theme;
-    const localList = wordTheme === 'food' ? FOOD_WORDS : GENERAL_WORDS;
-    const wordList = mergeWordLists(localList, remoteWords[wordTheme] || null);
+    const wordList = getWordList(wordTheme, remoteWords, backendLoaded);
     const words = wordList[count] || [];
     if (words.length === 0) {
-      setMessage('해당 설정의 단어가 없습니다.');
+      setMessage('해당 설정의 단어가 없습니다. Admin에서 등록해주세요.');
       return;
     }
     setSolution(pickRandomWord(words));
@@ -122,7 +156,7 @@ export function WordGame() {
     setCurrentGuess([]);
     setGameStatus('playing');
     setMessage(null);
-  }, [syllableCount, theme, remoteWords]);
+  }, [syllableCount, theme, remoteWords, backendLoaded]);
 
   const handleSyllableCountChange = useCallback((count: number) => {
     setSyllableCount(count);
@@ -177,6 +211,7 @@ export function WordGame() {
         theme={theme}
         onThemeChange={handleThemeChange}
         onNewGame={() => startNewGame()}
+        availableCounts={availableCounts}
       />
 
       <div className="word-game__hint">
