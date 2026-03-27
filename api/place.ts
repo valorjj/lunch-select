@@ -15,6 +15,7 @@ interface NaverPlaceData {
 
 // In-memory cache to avoid 429 rate limits from Naver Place scraping
 const cache = new Map<string, { data: NaverPlaceData; timestamp: number }>();
+const crossRefCache = new Map<string, { naverId: string | null; timestamp: number }>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function getCached(placeId: string): NaverPlaceData | null {
@@ -30,15 +31,24 @@ function getCached(placeId: string): NaverPlaceData | null {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   let placeId = typeof req.query.id === 'string' ? req.query.id : null;
   const rawUrl = typeof req.query.url === 'string' ? req.query.url : null;
+  const name = typeof req.query.name === 'string' ? req.query.name : null;
+  const address = typeof req.query.address === 'string' ? req.query.address : null;
 
   // If no direct ID, try to resolve from URL
   if (!placeId && rawUrl) {
     placeId = await resolveUrlToPlaceId(rawUrl);
   }
 
+  // If still no ID, try cross-reference by name+address (for Kakao-sourced restaurants)
+  if (!placeId && name) {
+    placeId = await resolveByNameAddress(name, address || '');
+  }
+
   if (!placeId) {
     return res.status(400).json({
-      error: 'URL에서 음식점 ID를 찾을 수 없습니다. 공유 링크(naver.me) 대신 브라우저 주소창의 URL을 복사해주세요.',
+      error: name
+        ? '네이버에서 일치하는 음식점을 찾을 수 없습니다.'
+        : 'URL에서 음식점 ID를 찾을 수 없습니다. 공유 링크(naver.me) 대신 브라우저 주소창의 URL을 복사해주세요.',
     });
   }
 
@@ -218,4 +228,94 @@ function parsePrice(priceStr: string): number | null {
   const numStr = priceStr.replace(/[^0-9]/g, '');
   const num = parseInt(numStr, 10);
   return isNaN(num) ? null : num;
+}
+
+// ──────────────────────────────────────────────
+// Cross-reference: find Naver Place ID by name + address
+// ──────────────────────────────────────────────
+function getCrossRefCached(key: string): string | null | undefined {
+  const entry = crossRefCache.get(key);
+  if (!entry) return undefined; // not cached
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    crossRefCache.delete(key);
+    return undefined;
+  }
+  return entry.naverId; // may be null (= "no match found")
+}
+
+function normalizeName(name: string): string {
+  return name.replace(/\s+/g, '').toLowerCase();
+}
+
+async function resolveByNameAddress(name: string, address: string): Promise<string | null> {
+  const cacheKey = `${name}|${address}`;
+  const cached = getCrossRefCached(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const query = address ? `${name} ${address}` : name;
+  console.log('[place] cross-ref search:', query);
+
+  const urls = [
+    `https://map.naver.com/p/api/search/allSearch?query=${encodeURIComponent(query)}&type=all&page=1&displayCount=5&lang=ko`,
+    `https://map.naver.com/v5/api/search?caller=pcweb&query=${encodeURIComponent(query)}&type=all&page=1&displayCount=5&lang=ko`,
+  ];
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Referer': 'https://map.naver.com/',
+    'Origin': 'https://map.naver.com',
+  };
+
+  const normalizedTarget = normalizeName(name);
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { headers });
+      if (!response.ok) continue;
+
+      const data = await response.json();
+      const placeResult =
+        data?.result?.place ||
+        data?.result?.restaurant ||
+        data?.result?.cafe ||
+        data?.result?.food;
+
+      if (!placeResult?.list?.length) continue;
+
+      // Find best match by name similarity
+      for (const item of placeResult.list) {
+        const itemName = normalizeName(item.name || item.title || '');
+        const itemId = String(item.id || item.placeId || '');
+        if (!itemId || !/^\d+$/.test(itemId)) continue;
+
+        // Check: names contain each other, or one is a substring of the other
+        if (
+          itemName === normalizedTarget ||
+          itemName.includes(normalizedTarget) ||
+          normalizedTarget.includes(itemName)
+        ) {
+          console.log('[place] cross-ref matched:', name, '->', itemId, `(${item.name})`);
+          crossRefCache.set(cacheKey, { naverId: itemId, timestamp: Date.now() });
+          return itemId;
+        }
+      }
+
+      // If no substring match, accept the first result if it's a restaurant
+      const firstItem = placeResult.list[0];
+      const firstId = String(firstItem.id || firstItem.placeId || '');
+      if (firstId && /^\d+$/.test(firstId)) {
+        console.log('[place] cross-ref fallback to first result:', name, '->', firstId, `(${firstItem.name})`);
+        crossRefCache.set(cacheKey, { naverId: firstId, timestamp: Date.now() });
+        return firstId;
+      }
+    } catch (e: any) {
+      console.error('[place] cross-ref search error:', e.message);
+    }
+  }
+
+  // Cache the miss to avoid repeated lookups
+  crossRefCache.set(cacheKey, { naverId: null, timestamp: Date.now() });
+  return null;
 }

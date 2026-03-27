@@ -117,6 +117,7 @@ export function useRestaurants(storageKey: string = 'lunch-select-restaurants'):
       lng: result.lng,
       phone: result.phone,
       naverMapUrl: result.naverMapUrl,
+      source: result.source,
     };
 
     setRestaurants((prev) => {
@@ -125,16 +126,24 @@ export function useRestaurants(storageKey: string = 'lunch-select-restaurants'):
       return next;
     });
 
-    // Fetch menu/thumbnail in background (only if we have a numeric place ID)
-    if (!/^\d+$/.test(result.id)) return;
-    apiFetch(`/api/place?id=${result.id}`)
+    // Fetch menu/thumbnail in background
+    const menuApiUrl = /^\d+$/.test(result.id)
+      ? `/api/place?id=${result.id}`
+      : `/api/place?name=${encodeURIComponent(result.name)}&address=${encodeURIComponent(result.roadAddress || result.address || '')}`;
+
+    apiFetch(menuApiUrl)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
         setRestaurants((prev) => {
           const next = prev.map((r) =>
             r.id === result.id
-              ? { ...r, menuItems: data.menuItems || [], thumbnail: data.thumbnail || '' }
+              ? {
+                  ...r,
+                  menuItems: data.menuItems || [],
+                  thumbnail: data.thumbnail || r.thumbnail,
+                  naverPlaceId: data.id || undefined,
+                }
               : r
           );
           saveToStorage(storageKey, next);

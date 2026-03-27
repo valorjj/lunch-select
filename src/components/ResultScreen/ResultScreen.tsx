@@ -40,18 +40,19 @@ export function ResultScreen({
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
 
-  const isNaverSource = winner.source !== 'kakao' && /^\d+$/.test(winner.id);
-
   // Fetch menu data when winner is selected and has no menu items
   const fetchMenu = useCallback(async () => {
-    if (!isNaverSource) {
-      setMenuError('메뉴 정보를 가져올 수 없습니다.');
-      return;
-    }
     setMenuLoading(true);
     setMenuError(null);
     try {
-      const response = await fetch(`/api/place?id=${winner.id}`);
+      // Use numeric Naver ID if available, otherwise cross-reference by name+address
+      const hasNaverId = /^\d+$/.test(winner.naverPlaceId || '') || /^\d+$/.test(winner.id);
+      const naverId = /^\d+$/.test(winner.id) ? winner.id : winner.naverPlaceId;
+      const apiUrl = hasNaverId
+        ? `/api/place?id=${naverId}`
+        : `/api/place?name=${encodeURIComponent(winner.name)}&address=${encodeURIComponent(winner.roadAddress || winner.address || '')}`;
+
+      const response = await fetch(apiUrl);
       if (!response.ok) throw new Error();
       const data = await response.json();
       if (data.menuItems && data.menuItems.length > 0) {
@@ -64,14 +65,14 @@ export function ResultScreen({
     } finally {
       setMenuLoading(false);
     }
-  }, [winner.id, isNaverSource]);
+  }, [winner.id, winner.naverPlaceId, winner.name, winner.roadAddress, winner.address]);
 
   // Auto-fetch menu if winner has no menu items
   useEffect(() => {
-    if (menuItems.length === 0 && isNaverSource) {
+    if (menuItems.length === 0) {
       fetchMenu();
     }
-  }, [winner.id, menuItems.length, fetchMenu, isNaverSource]);
+  }, [winner.id, menuItems.length, fetchMenu]);
 
   return (
     <div className="result-screen">
@@ -119,7 +120,7 @@ export function ResultScreen({
         {menuError && !menuLoading && (
           <div className="result-screen__menu-error">{menuError}</div>
         )}
-        {menuItems.length === 0 && !menuLoading && !menuError && isNaverSource && (
+        {menuItems.length === 0 && !menuLoading && !menuError && (
           <button className="result-screen__menu-fetch" onClick={fetchMenu}>
             메뉴 불러오기
           </button>

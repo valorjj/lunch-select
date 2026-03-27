@@ -31,4 +31,5 @@ export interface Restaurant {
   phone?: string;
   naverMapUrl: string;
   source?: 'kakao' | 'naver';
+  naverPlaceId?: string;
 }
