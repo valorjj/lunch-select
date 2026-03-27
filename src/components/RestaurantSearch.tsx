@@ -10,7 +10,8 @@ type ViewMode = 'list' | 'card';
 interface SearchResponse {
   results: SearchResult[];
   total: number;
-  start: number;
+  page: number;
+  totalPages: number;
 }
 
 interface RestaurantSearchProps {
@@ -23,6 +24,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -33,9 +35,8 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   const fetchPage = useCallback(async (searchQuery: string, page: number) => {
-    const start = (page - 1) * PAGE_SIZE + 1;
     const response = await fetch(
-      `${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(searchQuery)}&start=${start}&count=${PAGE_SIZE}`
+      `${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(searchQuery)}&page=${page}&displayCount=${PAGE_SIZE}`
     );
     if (!response.ok) throw new Error('검색에 실패했습니다.');
     const data: SearchResponse = await response.json();
@@ -56,6 +57,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
       const data = await fetchPage(trimmed, 1);
       setResults(data.results);
       setTotal(data.total);
+      setTotalPages(data.totalPages);
       setCurrentPage(1);
       setShowResults(true);
       setHasSearched(true);
@@ -101,8 +103,6 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
     setResults([]);
     setHasSearched(false);
   };
-
-  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="restaurant-search">
