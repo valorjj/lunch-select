@@ -215,6 +215,33 @@
       background: #787c7e;
       color: #fff;
     }
+
+    &--double {
+      background: #b8c4d0;
+    }
+
+    &--compound {
+      background: #b8c4d0;
+    }
+
+    &--shift {
+      min-width: 80px;
+      margin: 0 auto;
+      font-size: 0.78rem;
+      background: #c4cad0;
+      transition: all 0.15s;
+
+      &:hover { opacity: 0.85; }
+    }
+
+    &--shift-active {
+      background: var(--color-primary);
+      color: #fff;
+    }
+  }
+
+  &__keyboard-row--shift {
+    justify-content: center;
   }
 }
 
