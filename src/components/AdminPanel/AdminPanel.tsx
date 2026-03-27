@@ -117,7 +117,7 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
             onChange={(e) => setNewWord(e.target.value)}
             placeholder="새 단어 입력"
             className="admin-panel__input"
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
           />
           <select value={newTheme} onChange={(e) => setNewTheme(e.target.value)} className="admin-panel__select">
             <option value="food">음식</option>
