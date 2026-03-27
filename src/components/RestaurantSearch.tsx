@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { SearchResult } from '../types/restaurant';
 import './RestaurantSearch.scss';
 
-// Search endpoint only exists on Vercel functions, not the Spring Boot backend
 const SEARCH_API_BASE = '';
+const PAGE_SIZE = 5;
+
+interface SearchResponse {
+  results: SearchResult[];
+  total: number;
+  start: number;
+}
 
 interface RestaurantSearchProps {
   onSelect: (result: SearchResult) => void;
@@ -14,11 +20,24 @@ interface RestaurantSearchProps {
 export function RestaurantSearch({ onSelect, disabled, placeholder }: RestaurantSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [total, setTotal] = useState(0);
+  const [nextStart, setNextStart] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const [searchedQuery, setSearchedQuery] = useState('');
+
+  const fetchResults = useCallback(async (searchQuery: string, start: number) => {
+    const response = await fetch(
+      `${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(searchQuery)}&start=${start}`
+    );
+    if (!response.ok) throw new Error('검색에 실패했습니다.');
+    const data: SearchResponse = await response.json();
+    return data;
+  }, []);
 
   const doSearch = useCallback(async () => {
     const trimmed = query.trim();
@@ -29,42 +48,42 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
 
     setIsSearching(true);
     setError(null);
+    setAddedIds(new Set());
     try {
-      const response = await fetch(`${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(trimmed)}`);
-      if (!response.ok) {
-        throw new Error('검색에 실패했습니다.');
-      }
-      const data: SearchResult[] = await response.json();
-      setResults(data);
-      setShowDropdown(true);
+      const data = await fetchResults(trimmed, 1);
+      setResults(data.results);
+      setTotal(data.total);
+      setNextStart(1 + PAGE_SIZE);
+      setShowResults(true);
       setHasSearched(true);
+      setSearchedQuery(trimmed);
     } catch (err: any) {
       setError(err.message || '검색 중 오류가 발생했습니다.');
       setResults([]);
-      setShowDropdown(true);
+      setTotal(0);
+      setShowResults(true);
       setHasSearched(true);
     } finally {
       setIsSearching(false);
     }
-  }, [query]);
+  }, [query, fetchResults]);
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
+  const loadMore = useCallback(async () => {
+    setIsLoadingMore(true);
+    try {
+      const data = await fetchResults(searchedQuery, nextStart);
+      setResults((prev) => [...prev, ...data.results]);
+      setNextStart((prev) => prev + PAGE_SIZE);
+    } catch {
+      // silent
+    } finally {
+      setIsLoadingMore(false);
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [searchedQuery, nextStart, fetchResults]);
 
   const handleSelect = (result: SearchResult) => {
     onSelect(result);
-    setQuery('');
-    setResults([]);
-    setShowDropdown(false);
-    setHasSearched(false);
+    setAddedIds((prev) => new Set(prev).add(result.id));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,14 +93,16 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setShowDropdown(false);
-    }
+  const handleClose = () => {
+    setShowResults(false);
+    setResults([]);
+    setHasSearched(false);
   };
 
+  const hasMore = results.length < total;
+
   return (
-    <div className="restaurant-search" ref={wrapperRef}>
+    <div className="restaurant-search">
       <form className="restaurant-search__form" onSubmit={handleSubmit}>
         <input
           type="text"
@@ -89,8 +110,6 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
           placeholder={placeholder || "음식점 이름으로 검색하세요 (예: 역삼 김치찌개)"}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => results.length > 0 && setShowDropdown(true)}
-          onKeyDown={handleKeyDown}
           disabled={disabled || isSearching}
         />
         <button
@@ -102,34 +121,68 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
         </button>
       </form>
 
-      {showDropdown && (
-        <div className="restaurant-search__dropdown">
-          {error && (
-            <div className="restaurant-search__error">{error}</div>
-          )}
-          {!error && results.length === 0 && hasSearched && (
-            <div className="restaurant-search__empty">검색 결과가 없습니다</div>
-          )}
+      {showResults && (
+        <div className="restaurant-search__panel">
+          <div className="restaurant-search__panel-header">
+            {error ? (
+              <span className="restaurant-search__error-text">{error}</span>
+            ) : results.length > 0 ? (
+              <span className="restaurant-search__count">
+                검색 결과 <strong>{total.toLocaleString()}</strong>건
+              </span>
+            ) : hasSearched ? (
+              <span className="restaurant-search__count">검색 결과가 없습니다</span>
+            ) : null}
+            <button className="restaurant-search__close" onClick={handleClose}>
+              닫기
+            </button>
+          </div>
+
           {results.length > 0 && (
-            <ul className="restaurant-search__results">
-              {results.map((result) => (
-                <li
-                  key={result.id}
-                  className="restaurant-search__result-item"
-                  onClick={() => handleSelect(result)}
-                >
-                  <div className="restaurant-search__result-name">{result.name}</div>
-                  <div className="restaurant-search__result-meta">
-                    {result.category && (
-                      <span className="restaurant-search__result-category">{result.category}</span>
-                    )}
-                    <span className="restaurant-search__result-address">
-                      {result.roadAddress || result.address}
-                    </span>
+            <div className="restaurant-search__list">
+              {results.map((result) => {
+                const isAdded = addedIds.has(result.id);
+                return (
+                  <div key={result.id} className="restaurant-search__item">
+                    <div className="restaurant-search__item-body">
+                      <div className="restaurant-search__item-name">{result.name}</div>
+                      <div className="restaurant-search__item-meta">
+                        {result.category && (
+                          <span className="restaurant-search__item-category">{result.category}</span>
+                        )}
+                        <span className="restaurant-search__item-address">
+                          {result.roadAddress || result.address}
+                        </span>
+                      </div>
+                      {result.phone && (
+                        <div className="restaurant-search__item-phone">{result.phone}</div>
+                      )}
+                    </div>
+                    <button
+                      className={`restaurant-search__item-add ${isAdded ? 'restaurant-search__item-add--added' : ''}`}
+                      onClick={() => handleSelect(result)}
+                      disabled={isAdded}
+                    >
+                      {isAdded ? '✓' : '+'}
+                    </button>
                   </div>
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
+          )}
+
+          {hasMore && (
+            <button
+              className="restaurant-search__load-more"
+              onClick={loadMore}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? (
+                <span className="restaurant-search__spinner restaurant-search__spinner--small" />
+              ) : (
+                '더 보기'
+              )}
+            </button>
           )}
         </div>
       )}

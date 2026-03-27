@@ -25,7 +25,7 @@ interface SearchResult {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { query } = req.query;
+  const { query, start } = req.query;
 
   if (!query || typeof query !== 'string') {
     return res.status(400).json({ error: 'Missing query parameter' });
@@ -38,8 +38,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Naver Search API credentials not configured' });
   }
 
+  const startIndex = Math.max(1, Number(start) || 1);
+
   try {
-    const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&sort=comment`;
+    const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=${startIndex}&sort=comment`;
 
     const response = await fetch(url, {
       headers: {
@@ -55,16 +57,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await response.json();
     const items: NaverSearchItem[] = data.items || [];
+    const total: number = data.total || 0;
 
     const results: SearchResult[] = items.map((item) => {
       const placeId = extractPlaceId(item.link);
       const { lat, lng } = naverCoordToWgs84(Number(item.mapx), Number(item.mapy));
-      // Use place ID if available, otherwise generate ID from coordinates
       const id = placeId || `${item.mapx}_${item.mapy}`;
 
       return {
         id,
-        name: stripHtml(item.title),
+        name: decodeHtmlEntities(stripHtml(item.title)),
         category: item.category,
         address: item.address,
         roadAddress: item.roadAddress,
@@ -73,11 +75,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         phone: item.telephone,
         naverMapUrl: placeId
           ? `https://map.naver.com/p/entry/place/${placeId}`
-          : `https://map.naver.com/p/search/${encodeURIComponent(stripHtml(item.title))}`,
+          : `https://map.naver.com/p/search/${encodeURIComponent(decodeHtmlEntities(stripHtml(item.title)))}`,
       };
     });
 
-    return res.status(200).json(results);
+    return res.status(200).json({ results, total, start: startIndex });
   } catch (error: any) {
     console.error('Search API error:', error.message);
     return res.status(500).json({ error: 'Failed to search places', message: error.message });
@@ -86,6 +88,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 function stripHtml(str: string): string {
   return str.replace(/<[^>]*>/g, '');
+}
+
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)));
 }
 
 function extractPlaceId(link: string): string | null {
