@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../../utils/api';
+import { GlobalLoader } from '../GlobalLoader/GlobalLoader';
 import './AdminPanel.scss';
 
 interface GameWord {
@@ -15,9 +16,24 @@ interface AdminPanelProps {
   onClose: () => void;
 }
 
+type AdminTab = 'words' | 'stats';
+
+interface SearchStats {
+  period: string;
+  totalSearches: number;
+  topKeywords: Array<{ keyword: string; count: number }>;
+  topRegions: Array<{ region: string; count: number }>;
+}
+
 export function AdminPanel({ onClose }: AdminPanelProps) {
+  const [tab, setTab] = useState<AdminTab>('words');
   const [words, setWords] = useState<GameWord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [busyMessage, setBusyMessage] = useState('');
+  const [stats, setStats] = useState<SearchStats | null>(null);
+  const [statsDays, setStatsDays] = useState(7);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [filterTheme, setFilterTheme] = useState<string>('all');
   const [filterSyllable, setFilterSyllable] = useState<number | null>(null);
   const [newWord, setNewWord] = useState('');
@@ -40,6 +56,18 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
 
   useEffect(() => { fetchWords(); }, [fetchWords]);
 
+  const fetchStats = useCallback(async (days: number) => {
+    setStatsLoading(true);
+    try {
+      const res = await apiFetch(`/api/search-logs/stats?days=${days}`);
+      if (res.ok) setStats(await res.json());
+    } catch {} finally { setStatsLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'stats') fetchStats(statsDays);
+  }, [tab, statsDays, fetchStats]);
+
   const handleAdd = async () => {
     const trimmed = newWord.trim();
     if (!trimmed) return;
@@ -48,17 +76,20 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
       setTimeout(() => setMessage(null), 2000);
       return;
     }
-    const res = await apiFetch('/api/admin/words', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ word: trimmed, syllableCount: trimmed.length, theme: newTheme }),
-    });
-    if (res.ok) {
-      setNewWord('');
-      setMessage(`"${trimmed}" 추가됨`);
-      fetchWords();
-      setTimeout(() => setMessage(null), 2000);
-    }
+    setBusy(true); setBusyMessage('단어 추가 중...');
+    try {
+      const res = await apiFetch('/api/admin/words', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: trimmed, syllableCount: trimmed.length, theme: newTheme }),
+      });
+      if (res.ok) {
+        setNewWord('');
+        setMessage(`"${trimmed}" 추가됨`);
+        await fetchWords();
+        setTimeout(() => setMessage(null), 2000);
+      }
+    } finally { setBusy(false); }
   };
 
   const handleBulkAdd = async () => {
@@ -71,35 +102,44 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
       setTimeout(() => setMessage(null), 2000);
       return;
     }
-    const batch = unique.map(w => ({ word: w, syllableCount: w.length, theme: newTheme }));
-    const res = await apiFetch('/api/admin/words/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(batch),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setBulkText('');
-      setShowBulk(false);
-      setMessage(`${data.count}개 단어 추가됨${skipped > 0 ? ` (${skipped}개 중복 건너뜀)` : ''}`);
-      fetchWords();
-      setTimeout(() => setMessage(null), 2000);
-    }
+    setBusy(true); setBusyMessage(`${unique.length}개 단어 추가 중...`);
+    try {
+      const batch = unique.map(w => ({ word: w, syllableCount: w.length, theme: newTheme }));
+      const res = await apiFetch('/api/admin/words/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(batch),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBulkText('');
+        setShowBulk(false);
+        setMessage(`${data.count}개 단어 추가됨${skipped > 0 ? ` (${skipped}개 중복 건너뜀)` : ''}`);
+        await fetchWords();
+        setTimeout(() => setMessage(null), 2000);
+      }
+    } finally { setBusy(false); }
   };
 
   const handleToggle = async (word: GameWord) => {
-    await apiFetch(`/api/admin/words/${word.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active: !word.active }),
-    });
-    fetchWords();
+    setBusy(true); setBusyMessage('변경 중...');
+    try {
+      await apiFetch(`/api/admin/words/${word.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !word.active }),
+      });
+      await fetchWords();
+    } finally { setBusy(false); }
   };
 
   const handleDelete = async (word: GameWord) => {
     if (!window.confirm(`"${word.word}" 삭제하시겠습니까?`)) return;
-    await apiFetch(`/api/admin/words/${word.id}`, { method: 'DELETE' });
-    fetchWords();
+    setBusy(true); setBusyMessage('삭제 중...');
+    try {
+      await apiFetch(`/api/admin/words/${word.id}`, { method: 'DELETE' });
+      await fetchWords();
+    } finally { setBusy(false); }
   };
 
   const handleDeleteAll = async () => {
@@ -108,12 +148,15 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
     const syllableLabel = filterSyllable ? ` ${filterSyllable}글자` : '';
     if (!window.confirm(`⚠️ ${label}${syllableLabel} 단어 ${filtered.length}개를 모두 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
     if (!window.confirm(`정말 삭제하시겠습니까? (${filtered.length}개)`)) return;
-    for (const w of filtered) {
-      await apiFetch(`/api/admin/words/${w.id}`, { method: 'DELETE' });
-    }
-    setMessage(`${filtered.length}개 단어 삭제됨`);
-    fetchWords();
-    setTimeout(() => setMessage(null), 2000);
+    setBusy(true); setBusyMessage(`${filtered.length}개 삭제 중...`);
+    try {
+      for (const w of filtered) {
+        await apiFetch(`/api/admin/words/${w.id}`, { method: 'DELETE' });
+      }
+      setMessage(`${filtered.length}개 단어 삭제됨`);
+      await fetchWords();
+      setTimeout(() => setMessage(null), 2000);
+    } finally { setBusy(false); }
   };
 
   const filtered = words.filter(w => {
@@ -126,13 +169,77 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
 
   return (
     <div className="admin-panel">
+      <GlobalLoader visible={busy} message={busyMessage} />
       <div className="admin-panel__header">
-        <h2>단어 관리 (Admin)</h2>
+        <h2>Admin</h2>
+        <div className="admin-panel__tabs">
+          <button className={`admin-panel__tab ${tab === 'words' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('words')}>단어 관리</button>
+          <button className={`admin-panel__tab ${tab === 'stats' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('stats')}>검색 통계</button>
+        </div>
         <button className="admin-panel__close" onClick={onClose}>&times;</button>
       </div>
 
       {message && <div className="admin-panel__message">{message}</div>}
 
+      {tab === 'stats' && (
+        <div className="admin-panel__stats">
+          <div className="admin-panel__stats-header">
+            <div className="admin-panel__filter-group">
+              {[1, 7, 30].map(d => (
+                <button
+                  key={d}
+                  className={`admin-panel__filter ${statsDays === d ? 'admin-panel__filter--active' : ''}`}
+                  onClick={() => setStatsDays(d)}
+                >
+                  {d === 1 ? '오늘' : `${d}일`}
+                </button>
+              ))}
+            </div>
+            {stats && <span className="admin-panel__count">총 {stats.totalSearches}회 검색</span>}
+          </div>
+
+          {statsLoading ? (
+            <div className="admin-panel__loading">통계 로딩 중...</div>
+          ) : stats ? (
+            <div className="admin-panel__stats-grid">
+              <div className="admin-panel__stats-section">
+                <h3>인기 검색어</h3>
+                {stats.topKeywords.length === 0 ? (
+                  <div className="admin-panel__empty">검색 기록이 없습니다</div>
+                ) : (
+                  <div className="admin-panel__stats-list">
+                    {stats.topKeywords.map((item, i) => (
+                      <div key={item.keyword} className="admin-panel__stats-row">
+                        <span className="admin-panel__stats-rank">{i + 1}</span>
+                        <span className="admin-panel__stats-keyword">{item.keyword}</span>
+                        <span className="admin-panel__stats-count">{item.count}회</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="admin-panel__stats-section">
+                <h3>인기 지역</h3>
+                {stats.topRegions.length === 0 ? (
+                  <div className="admin-panel__empty">지역 데이터가 없습니다</div>
+                ) : (
+                  <div className="admin-panel__stats-list">
+                    {stats.topRegions.map((item, i) => (
+                      <div key={item.region} className="admin-panel__stats-row">
+                        <span className="admin-panel__stats-rank">{i + 1}</span>
+                        <span className="admin-panel__stats-keyword">{item.region}</span>
+                        <span className="admin-panel__stats-count">{item.count}회</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {tab === 'words' && <>
       {/* Add word */}
       <div className="admin-panel__add">
         <div className="admin-panel__add-row">
@@ -239,6 +346,7 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
           ))
         )}
       </div>
+      </>}
     </div>
   );
 }

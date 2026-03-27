@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { SearchResult } from '../types/restaurant';
+import { apiFetch } from '../utils/api';
 import { GlobalLoader } from './GlobalLoader/GlobalLoader';
 import './RestaurantSearch.scss';
 
@@ -63,6 +64,14 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
       setShowResults(true);
       setHasSearched(true);
       setSearchedQuery(trimmed);
+      // Log search for statistics (fire and forget)
+      const parts = trimmed.split(/\s+/);
+      const region = parts.length > 1 ? parts[0] : null;
+      apiFetch('/api/search-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword: trimmed, region }),
+      }).catch(() => {});
     } catch (err: any) {
       setError(err.message || '검색 중 오류가 발생했습니다.');
       setResults([]);
