@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { decomposeWord } from './hangul';
 import { GameBoard } from './GameBoard';
 import { JamoKeyboard } from './JamoKeyboard';
@@ -6,6 +6,7 @@ import { GameSettings } from './GameSettings';
 import { CellStatus } from './GameCell';
 import { FOOD_WORDS } from '../../data/foodWords';
 import { GENERAL_WORDS } from '../../data/generalWords';
+import { apiFetch } from '../../utils/api';
 import './WordGame.scss';
 
 const MAX_ATTEMPTS = 6;
@@ -44,13 +45,45 @@ function pickRandomWord(words: string[]): string {
   return words[Math.floor(Math.random() * words.length)];
 }
 
+// Merge local and remote words, preferring remote if available
+function mergeWordLists(
+  local: Record<number, string[]>,
+  remote: Record<string, string[]> | null,
+): Record<number, string[]> {
+  if (!remote) return local;
+  const merged: Record<number, string[]> = { ...local };
+  for (const [key, words] of Object.entries(remote)) {
+    const count = Number(key);
+    const existing = new Set(merged[count] || []);
+    words.forEach((w) => existing.add(w));
+    merged[count] = Array.from(existing);
+  }
+  return merged;
+}
+
 export function WordGame() {
   const [syllableCount, setSyllableCount] = useState(3);
   const [theme, setTheme] = useState<'food' | 'general'>('food');
+  const [remoteWords, setRemoteWords] = useState<Record<string, Record<string, string[]>>>({});
   const [solution, setSolution] = useState(() => {
     const words = FOOD_WORDS[3] || [];
     return words.length > 0 ? words[Math.floor(Math.random() * words.length)] : '비빔밥';
   });
+
+  // Fetch words from backend on mount
+  useEffect(() => {
+    const fetchRemote = async (t: string) => {
+      try {
+        const res = await apiFetch(`/api/words?theme=${t}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRemoteWords((prev) => ({ ...prev, [t]: data }));
+        }
+      } catch { /* use local fallback */ }
+    };
+    fetchRemote('food');
+    fetchRemote('general');
+  }, []);
   const [guesses, setGuesses] = useState<GuessEntry[]>([]);
   const [currentGuess, setCurrentGuess] = useState<string[]>([]);
   const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing');
@@ -77,7 +110,8 @@ export function WordGame() {
   const startNewGame = useCallback((sc?: number, th?: 'food' | 'general') => {
     const count = sc ?? syllableCount;
     const wordTheme = th ?? theme;
-    const wordList = wordTheme === 'food' ? FOOD_WORDS : GENERAL_WORDS;
+    const localList = wordTheme === 'food' ? FOOD_WORDS : GENERAL_WORDS;
+    const wordList = mergeWordLists(localList, remoteWords[wordTheme] || null);
     const words = wordList[count] || [];
     if (words.length === 0) {
       setMessage('해당 설정의 단어가 없습니다.');
@@ -88,7 +122,7 @@ export function WordGame() {
     setCurrentGuess([]);
     setGameStatus('playing');
     setMessage(null);
-  }, [syllableCount, theme]);
+  }, [syllableCount, theme, remoteWords]);
 
   const handleSyllableCountChange = useCallback((count: number) => {
     setSyllableCount(count);

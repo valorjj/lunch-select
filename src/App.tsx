@@ -12,6 +12,8 @@ import { ResultScreen } from './components/ResultScreen/ResultScreen';
 import { AuthButton } from './components/AuthButton/AuthButton';
 import { WordGame } from './components/WordGame/WordGame';
 import { BookmarkSection } from './components/BookmarkSection/BookmarkSection';
+import { VisitorCounter } from './components/VisitorCounter/VisitorCounter';
+import { AdminPanel } from './components/AdminPanel/AdminPanel';
 import './App.scss';
 
 type AppPhase = 'input' | 'game' | 'result';
@@ -21,6 +23,7 @@ function App() {
   const [restaurantPhase, setRestaurantPhase] = useState<AppPhase>('input');
   const [cafePhase, setCafePhase] = useState<AppPhase>('input');
   const [winner, setWinner] = useState<Restaurant | null>(null);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const companyLoc = useCompanyLocation();
   const restaurantStore = useRestaurants('lunch-select-restaurants');
@@ -84,8 +87,13 @@ function App() {
     <div className="app">
       <header className="app__header">
         <div className="app__header-top">
-          <div />
-          <AuthButton user={user} isLoading={authLoading} onLogin={login} onLogout={logout} />
+          <VisitorCounter />
+          <div className="app__header-right">
+            {user && (user as any).isAdmin && (
+              <button className="app__admin-btn" onClick={() => setShowAdmin(true)}>Admin</button>
+            )}
+            <AuthButton user={user} isLoading={authLoading} onLogin={login} onLogout={logout} />
+          </div>
         </div>
         <h1
           className="app__logo"
@@ -156,6 +164,7 @@ function App() {
           </div>
         )}
       </main>
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
     </div>
   );
 }

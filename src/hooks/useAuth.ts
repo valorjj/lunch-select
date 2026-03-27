@@ -7,6 +7,7 @@ interface User {
   email: string;
   profileImage: string | null;
   provider: string;
+  isAdmin?: boolean;
 }
 
 interface UseAuthReturn {

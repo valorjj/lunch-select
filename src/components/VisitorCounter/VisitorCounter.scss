@@ -1,0 +1,22 @@
+.visitor-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border-radius: 12px;
+  font-size: 0.72rem;
+  user-select: none;
+
+  &__label {
+    color: var(--color-text-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  &__count {
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
+}
