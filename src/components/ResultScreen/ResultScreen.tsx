@@ -64,14 +64,14 @@ export function ResultScreen({
     } finally {
       setMenuLoading(false);
     }
-  }, [winner.id]);
+  }, [winner.id, isNaverSource]);
 
   // Auto-fetch menu if winner has no menu items
   useEffect(() => {
     if (menuItems.length === 0 && isNaverSource) {
       fetchMenu();
     }
-  }, [winner.id, menuItems.length, fetchMenu]);
+  }, [winner.id, menuItems.length, fetchMenu, isNaverSource]);
 
   return (
     <div className="result-screen">

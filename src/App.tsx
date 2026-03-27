@@ -25,7 +25,6 @@ function App() {
   const [cafePhase, setCafePhase] = useState<AppPhase>('input');
   const [winner, setWinner] = useState<Restaurant | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [sharedMode, setSharedMode] = useState(false);
 
   // Check for shared result in URL
   useEffect(() => {
@@ -36,7 +35,6 @@ function App() {
       if (shared) {
         setWinner(shared);
         setRestaurantPhase('result');
-        setSharedMode(true);
       }
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
@@ -74,7 +72,6 @@ function App() {
 
   const handleStartOver = useCallback(() => {
     setWinner(null);
-    setSharedMode(false);
     store.clearAll();
     setPhase('input');
   }, [store, setPhase]);
