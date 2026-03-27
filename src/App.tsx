@@ -164,7 +164,7 @@ function App() {
           </div>
         )}
       </main>
-      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} isSuperAdmin={user?.email === 'valorjj@gmail.com'} />}
     </div>
   );
 }

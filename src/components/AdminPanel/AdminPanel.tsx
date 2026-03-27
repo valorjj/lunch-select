@@ -14,9 +14,10 @@ interface GameWord {
 
 interface AdminPanelProps {
   onClose: () => void;
+  isSuperAdmin?: boolean;
 }
 
-type AdminTab = 'words' | 'stats';
+type AdminTab = 'words' | 'stats' | 'admins';
 
 interface SearchStats {
   period: string;
@@ -25,7 +26,14 @@ interface SearchStats {
   topRegions: Array<{ region: string; count: number }>;
 }
 
-export function AdminPanel({ onClose }: AdminPanelProps) {
+interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  provider: string;
+}
+
+export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
   const [tab, setTab] = useState<AdminTab>('words');
   const [words, setWords] = useState<GameWord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +42,8 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
   const [stats, setStats] = useState<SearchStats | null>(null);
   const [statsDays, setStatsDays] = useState(7);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
   const [filterTheme, setFilterTheme] = useState<string>('all');
   const [filterSyllable, setFilterSyllable] = useState<number | null>(null);
   const [newWord, setNewWord] = useState('');
@@ -63,6 +73,48 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
       if (res.ok) setStats(await res.json());
     } catch {} finally { setStatsLoading(false); }
   }, []);
+
+  const fetchAdmins = useCallback(async () => {
+    try {
+      const res = await apiFetch('/api/admin/admins');
+      if (res.ok) setAdmins(await res.json());
+    } catch {}
+  }, []);
+
+  const handleAddAdmin = async () => {
+    const email = newAdminEmail.trim();
+    if (!email) return;
+    setBusy(true); setBusyMessage('관리자 추가 중...');
+    try {
+      const res = await apiFetch('/api/admin/admins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setNewAdminEmail('');
+        setMessage(`${data.name || email} 관리자 추가됨`);
+        await fetchAdmins();
+      } else {
+        setMessage(data.error || '추가 실패');
+      }
+      setTimeout(() => setMessage(null), 3000);
+    } finally { setBusy(false); }
+  };
+
+  const handleRemoveAdmin = async (admin: AdminUser) => {
+    if (!window.confirm(`"${admin.email}" 관리자 권한을 제거하시겠습니까?`)) return;
+    setBusy(true); setBusyMessage('권한 제거 중...');
+    try {
+      await apiFetch(`/api/admin/admins/${admin.id}`, { method: 'DELETE' });
+      await fetchAdmins();
+    } finally { setBusy(false); }
+  };
+
+  useEffect(() => {
+    if (tab === 'admins') fetchAdmins();
+  }, [tab, fetchAdmins]);
 
   useEffect(() => {
     if (tab === 'stats') fetchStats(statsDays);
@@ -175,6 +227,9 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
         <div className="admin-panel__tabs">
           <button className={`admin-panel__tab ${tab === 'words' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('words')}>단어 관리</button>
           <button className={`admin-panel__tab ${tab === 'stats' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('stats')}>검색 통계</button>
+          {isSuperAdmin && (
+            <button className={`admin-panel__tab ${tab === 'admins' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('admins')}>관리자</button>
+          )}
         </div>
         <button className="admin-panel__close" onClick={onClose}>&times;</button>
       </div>
@@ -236,6 +291,41 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
               </div>
             </div>
           ) : null}
+        </div>
+      )}
+
+      {tab === 'admins' && isSuperAdmin && (
+        <div className="admin-panel__admins">
+          <div className="admin-panel__add-row">
+            <input
+              type="email"
+              value={newAdminEmail}
+              onChange={(e) => setNewAdminEmail(e.target.value)}
+              placeholder="관리자로 추가할 이메일 (로그인된 사용자만 가능)"
+              className="admin-panel__input"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAdmin(); } }}
+            />
+            <button className="admin-panel__btn admin-panel__btn--primary" onClick={handleAddAdmin}>추가</button>
+          </div>
+          <div className="admin-panel__list" style={{ marginTop: '0.75rem' }}>
+            {admins.map(a => (
+              <div key={a.id} className="admin-panel__word">
+                <span className="admin-panel__word-text">{a.name}</span>
+                <span className="admin-panel__word-meta">{a.email} · {a.provider}</span>
+                <div className="admin-panel__word-actions">
+                  {a.id !== 0 && (
+                    <button
+                      className="admin-panel__btn admin-panel__btn--small admin-panel__btn--danger"
+                      onClick={() => handleRemoveAdmin(a)}
+                    >
+                      제거
+                    </button>
+                  )}
+                  {a.id === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Super Admin</span>}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
