@@ -44,6 +44,11 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
   const handleAdd = async () => {
     const trimmed = newWord.trim();
     if (!trimmed) return;
+    if (words.some(w => w.word === trimmed)) {
+      setMessage(`"${trimmed}" 이미 등록된 단어입니다`);
+      setTimeout(() => setMessage(null), 2000);
+      return;
+    }
     const res = await apiFetch('/api/admin/words', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -58,9 +63,16 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
   };
 
   const handleBulkAdd = async () => {
+    const existingWords = new Set(words.map(w => w.word));
     const wordList = bulkText.split(/[,\n]/).map(w => w.trim()).filter(Boolean);
-    if (wordList.length === 0) return;
-    const batch = wordList.map(w => ({ word: w, syllableCount: w.length, theme: newTheme }));
+    const unique = Array.from(new Set(wordList)).filter(w => !existingWords.has(w));
+    const skipped = wordList.length - unique.length;
+    if (unique.length === 0) {
+      setMessage(`모두 중복된 단어입니다 (${skipped}개 건너뜀)`);
+      setTimeout(() => setMessage(null), 2000);
+      return;
+    }
+    const batch = unique.map(w => ({ word: w, syllableCount: w.length, theme: newTheme }));
     const res = await apiFetch('/api/admin/words/batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -70,7 +82,7 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
       const data = await res.json();
       setBulkText('');
       setShowBulk(false);
-      setMessage(`${data.count}개 단어 추가됨`);
+      setMessage(`${data.count}개 단어 추가됨${skipped > 0 ? ` (${skipped}개 중복 건너뜀)` : ''}`);
       fetchWords();
       setTimeout(() => setMessage(null), 2000);
     }
