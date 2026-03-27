@@ -70,7 +70,7 @@ export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, 
         disabled={!canStartGame}
       >
         {canStartGame
-          ? '사다리 타기 시작!'
+          ? '게임 시작!'
           : `음식점을 ${APP_CONFIG.minRestaurants}개 이상 추가해주세요`}
       </button>
     </div>

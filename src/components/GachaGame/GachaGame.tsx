@@ -177,7 +177,7 @@ export function GachaGame({ restaurants, onComplete }: GachaGameProps) {
       {/* Start button */}
       {phase === 'idle' && (
         <button className="gacha-game__start-btn" onClick={handleStart}>
-          &#127922; &#xB7D1;&#xAE30;!
+          &#127922; 뽑기!
         </button>
       )}
 
@@ -185,7 +185,7 @@ export function GachaGame({ restaurants, onComplete }: GachaGameProps) {
       {phase === 'reveal' && winnerCapsule && (
         <div className="gacha-game__winner-banner fade-in">
           <span className="gacha-game__winner-icon">&#127881;</span>
-          <strong>{winnerCapsule.restaurant.name}</strong> &#xB2F9;&#xCCA8;!
+          <strong>{winnerCapsule.restaurant.name}</strong> 당첨!
         </div>
       )}
     </div>
