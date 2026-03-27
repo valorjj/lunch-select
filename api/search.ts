@@ -22,81 +22,171 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const page = Math.max(1, Number(req.query.page) || 1);
   const displayCount = Math.min(20, Math.max(1, Number(req.query.displayCount) || 20));
 
-  try {
-    // Use Naver Map's search endpoint for more results
-    const results = await searchNaverMap(query, page, displayCount);
-    return res.status(200).json(results);
-  } catch (error: any) {
-    console.error('Search API error:', error.message);
+  // Try Naver Map search (more results), then Kakao, then official Naver (5 max)
+  const errors: string[] = [];
 
-    // Fallback to official Naver Search API (limited to 5 results)
-    try {
-      const fallback = await searchNaverLocal(query);
-      return res.status(200).json(fallback);
-    } catch (fallbackError: any) {
-      return res.status(500).json({ error: 'Failed to search places', message: error.message });
+  // 1. Try Naver Map internal search
+  try {
+    const result = await searchNaverMap(query, page, displayCount);
+    if (result.results.length > 0) {
+      return res.status(200).json(result);
     }
+    errors.push('Naver Map: empty results');
+  } catch (e: any) {
+    errors.push(`Naver Map: ${e.message}`);
+  }
+
+  // 2. Try Kakao Local Search (up to 15 per page)
+  try {
+    const result = await searchKakao(query, page, displayCount);
+    if (result.results.length > 0) {
+      return res.status(200).json(result);
+    }
+    errors.push('Kakao: empty results');
+  } catch (e: any) {
+    errors.push(`Kakao: ${e.message}`);
+  }
+
+  // 3. Fallback: Official Naver Search API (max 5 results, page 1 only)
+  try {
+    const result = await searchNaverLocal(query);
+    return res.status(200).json({ ...result, _debug: errors });
+  } catch (e: any) {
+    errors.push(`Naver Local: ${e.message}`);
+    return res.status(500).json({ error: 'All search providers failed', _debug: errors });
   }
 }
 
+// ──────────────────────────────────────────────
+// Provider 1: Naver Map internal search
+// ──────────────────────────────────────────────
 async function searchNaverMap(
   query: string,
   page: number,
   displayCount: number,
 ): Promise<{ results: SearchResult[]; total: number; page: number; totalPages: number }> {
-  const url = `https://map.naver.com/p/api/search/allSearch?query=${encodeURIComponent(query)}&type=all&page=${page}&displayCount=${displayCount}&lang=ko`;
+  // Try multiple URL patterns
+  const urls = [
+    `https://map.naver.com/p/api/search/allSearch?query=${encodeURIComponent(query)}&type=all&page=${page}&displayCount=${displayCount}&lang=ko`,
+    `https://map.naver.com/v5/api/search?caller=pcweb&query=${encodeURIComponent(query)}&type=all&page=${page}&displayCount=${displayCount}&lang=ko`,
+  ];
+
+  let lastError = '';
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Referer': 'https://map.naver.com/',
+          'Origin': 'https://map.naver.com',
+        },
+      });
+
+      if (!response.ok) {
+        lastError = `${url} → HTTP ${response.status}`;
+        continue;
+      }
+
+      const data = await response.json();
+
+      // Try various response structures
+      const placeResult =
+        data?.result?.place ||
+        data?.result?.restaurant ||
+        data?.result?.cafe ||
+        data?.result?.food;
+
+      if (!placeResult?.list?.length) {
+        lastError = `${url} → no place list in response (keys: ${Object.keys(data?.result || data || {}).join(',')})`;
+        continue;
+      }
+
+      const total = placeResult.totalCount || placeResult.list.length;
+      const totalPages = Math.ceil(total / displayCount);
+
+      const results: SearchResult[] = placeResult.list.map((item: any) => {
+        const id = item.id || item.placeId || '';
+        const categories = Array.isArray(item.category)
+          ? item.category.join('>')
+          : (item.category || item.categoryName || '');
+
+        return {
+          id: String(id),
+          name: decodeHtmlEntities(item.name || item.title || ''),
+          category: categories,
+          address: item.address || item.jibunAddress || '',
+          roadAddress: item.roadAddress || item.fullRoadAddress || '',
+          lat: parseFloat(item.y || item.lat) || 0,
+          lng: parseFloat(item.x || item.lng) || 0,
+          phone: item.tel || item.phone || item.telephone || '',
+          naverMapUrl: id
+            ? `https://map.naver.com/p/entry/place/${id}`
+            : `https://map.naver.com/p/search/${encodeURIComponent(item.name || '')}`,
+        };
+      });
+
+      return { results, total, page, totalPages };
+    } catch (e: any) {
+      lastError = `${url} → ${e.message}`;
+    }
+  }
+
+  throw new Error(lastError || 'All Naver Map URLs failed');
+}
+
+// ──────────────────────────────────────────────
+// Provider 2: Kakao Local Search
+// ──────────────────────────────────────────────
+async function searchKakao(
+  query: string,
+  page: number,
+  displayCount: number,
+): Promise<{ results: SearchResult[]; total: number; page: number; totalPages: number }> {
+  const kakaoKey = process.env.KAKAO_REST_API_KEY;
+  if (!kakaoKey) throw new Error('Kakao REST API key not configured');
+
+  // Kakao supports size=1~15, page=1~3 (max 45 results)
+  const size = Math.min(15, displayCount);
+  const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&category_group_code=FD6,CE7&size=${size}&page=${page}`;
 
   const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Referer': 'https://map.naver.com/',
-    },
+    headers: { Authorization: `KakaoAK ${kakaoKey}` },
   });
 
-  if (!response.ok) {
-    throw new Error(`Naver Map search error ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`Kakao API error ${response.status}`);
 
   const data = await response.json();
+  const meta = data.meta || {};
+  const total = meta.pageable_count || 0;
+  const totalPages = Math.ceil(total / size);
 
-  // The response has result.place or result.restaurant
-  const placeResult = data?.result?.place || data?.result?.restaurant;
-  if (!placeResult || !placeResult.list) {
-    return { results: [], total: 0, page, totalPages: 0 };
-  }
-
-  const total = placeResult.totalCount || 0;
-  const totalPages = Math.ceil(total / displayCount);
-
-  const results: SearchResult[] = placeResult.list.map((item: any) => {
-    const id = item.id || item.placeId || '';
-    return {
-      id: String(id),
-      name: decodeHtmlEntities(item.name || ''),
-      category: item.category ? item.category.join('>') : (item.categoryName || ''),
-      address: item.address || '',
-      roadAddress: item.roadAddress || item.fullRoadAddress || '',
-      lat: parseFloat(item.y) || 0,
-      lng: parseFloat(item.x) || 0,
-      phone: item.tel || item.phone || '',
-      naverMapUrl: id
-        ? `https://map.naver.com/p/entry/place/${id}`
-        : `https://map.naver.com/p/search/${encodeURIComponent(item.name || '')}`,
-    };
-  });
+  const results: SearchResult[] = (data.documents || []).map((item: any) => ({
+    id: item.id || '',
+    name: item.place_name || '',
+    category: item.category_name || '',
+    address: item.address_name || '',
+    roadAddress: item.road_address_name || '',
+    lat: parseFloat(item.y) || 0,
+    lng: parseFloat(item.x) || 0,
+    phone: item.phone || '',
+    naverMapUrl: `https://map.naver.com/p/search/${encodeURIComponent(item.place_name || '')}`,
+  }));
 
   return { results, total, page, totalPages };
 }
 
+// ──────────────────────────────────────────────
+// Provider 3: Official Naver Search (fallback, max 5)
+// ──────────────────────────────────────────────
 async function searchNaverLocal(
   query: string,
 ): Promise<{ results: SearchResult[]; total: number; page: number; totalPages: number }> {
   const clientId = process.env.NAVER_SEARCH_CLIENT_ID;
   const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret) {
-    throw new Error('Naver Search API credentials not configured');
-  }
+  if (!clientId || !clientSecret) throw new Error('Naver Search API credentials not configured');
 
   const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&sort=comment`;
 
@@ -107,13 +197,10 @@ async function searchNaverLocal(
     },
   });
 
-  if (!response.ok) {
-    throw new Error(`Naver Search API error ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`Naver Search API error ${response.status}`);
 
   const data = await response.json();
   const items = data.items || [];
-  const total = items.length;
 
   const results: SearchResult[] = items.map((item: any) => {
     const placeId = extractPlaceId(item.link);
@@ -135,9 +222,12 @@ async function searchNaverLocal(
     };
   });
 
-  return { results, total, page: 1, totalPages: 1 };
+  return { results, total: items.length, page: 1, totalPages: 1 };
 }
 
+// ──────────────────────────────────────────────
+// Utilities
+// ──────────────────────────────────────────────
 function stripHtml(str: string): string {
   return str.replace(/<[^>]*>/g, '');
 }
