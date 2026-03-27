@@ -102,6 +102,20 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
     fetchWords();
   };
 
+  const handleDeleteAll = async () => {
+    if (filtered.length === 0) return;
+    const label = filterTheme === 'all' ? '전체' : filterTheme === 'food' ? '음식' : '일반';
+    const syllableLabel = filterSyllable ? ` ${filterSyllable}글자` : '';
+    if (!window.confirm(`⚠️ ${label}${syllableLabel} 단어 ${filtered.length}개를 모두 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+    if (!window.confirm(`정말 삭제하시겠습니까? (${filtered.length}개)`)) return;
+    for (const w of filtered) {
+      await apiFetch(`/api/admin/words/${w.id}`, { method: 'DELETE' });
+    }
+    setMessage(`${filtered.length}개 단어 삭제됨`);
+    fetchWords();
+    setTimeout(() => setMessage(null), 2000);
+  };
+
   const filtered = words.filter(w => {
     if (filterTheme !== 'all' && w.theme !== filterTheme) return false;
     if (filterSyllable !== null && w.syllableCount !== filterSyllable) return false;
@@ -187,6 +201,11 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
         <span className="admin-panel__count">
           {activeCount}개 활성 / {filtered.length}개 전체
         </span>
+        {filtered.length > 0 && (
+          <button className="admin-panel__btn admin-panel__btn--small admin-panel__btn--danger" onClick={handleDeleteAll}>
+            전체 삭제
+          </button>
+        )}
       </div>
 
       {/* Word list */}
