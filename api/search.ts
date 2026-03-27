@@ -144,15 +144,21 @@ async function searchKakao(
   page: number,
   displayCount: number,
 ): Promise<{ results: SearchResult[]; total: number; page: number; totalPages: number }> {
-  const kakaoKey = process.env.KAKAO_REST_API_KEY;
-  if (!kakaoKey) throw new Error('Kakao REST API key not configured');
+  const kakaoRestKey = process.env.KAKAO_REST_API_KEY;
+  const kakaoAdminKey = process.env.KAKAO_ADMIN_KEY;
+  if (!kakaoRestKey && !kakaoAdminKey) throw new Error('Kakao API key not configured');
 
   // Kakao supports size=1~15, page=1~45 (max 45 results)
   const size = Math.min(15, displayCount);
   const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=${size}&page=${page}`;
 
+  // Try REST API key first, then Admin key
+  const authHeader = kakaoRestKey
+    ? `KakaoAK ${kakaoRestKey}`
+    : `KakaoAK ${kakaoAdminKey}`;
+
   const response = await fetch(url, {
-    headers: { Authorization: `KakaoAK ${kakaoKey}` },
+    headers: { Authorization: authHeader },
   });
 
   if (!response.ok) throw new Error(`Kakao API error ${response.status}`);
