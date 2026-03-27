@@ -147,9 +147,9 @@ async function searchKakao(
   const kakaoKey = process.env.KAKAO_REST_API_KEY;
   if (!kakaoKey) throw new Error('Kakao REST API key not configured');
 
-  // Kakao supports size=1~15, page=1~3 (max 45 results)
+  // Kakao supports size=1~15, page=1~45 (max 45 results)
   const size = Math.min(15, displayCount);
-  const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&category_group_code=FD6,CE7&size=${size}&page=${page}`;
+  const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=${size}&page=${page}`;
 
   const response = await fetch(url, {
     headers: { Authorization: `KakaoAK ${kakaoKey}` },
