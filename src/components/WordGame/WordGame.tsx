@@ -69,7 +69,11 @@ export function WordGame() {
   const [theme, setTheme] = useState<'food' | 'general'>('food');
   const [remoteWords, setRemoteWords] = useState<Record<string, Record<string, string[]>>>({});
   const [backendLoaded, setBackendLoaded] = useState(false);
-  const [solution, setSolution] = useState('');
+  const [solution, setSolution] = useState(() => {
+    // Start with a local word so the game is playable immediately
+    const words = FOOD_WORDS[2] || [];
+    return words.length > 0 ? words[Math.floor(Math.random() * words.length)] : '김밥';
+  });
 
   // Fetch words from backend on mount
   useEffect(() => {
