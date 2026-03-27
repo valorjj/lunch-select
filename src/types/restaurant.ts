@@ -15,6 +15,7 @@ export interface SearchResult {
   lng: number;
   phone: string;
   naverMapUrl: string;
+  source?: 'kakao' | 'naver';
 }
 
 export interface Restaurant {
@@ -29,4 +30,5 @@ export interface Restaurant {
   lng: number;
   phone?: string;
   naverMapUrl: string;
+  source?: 'kakao' | 'naver';
 }

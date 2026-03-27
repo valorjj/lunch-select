@@ -40,9 +40,11 @@ export function ResultScreen({
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
 
+  const isNaverSource = winner.source !== 'kakao' && /^\d+$/.test(winner.id);
+
   // Fetch menu data when winner is selected and has no menu items
   const fetchMenu = useCallback(async () => {
-    if (!/^\d+$/.test(winner.id)) {
+    if (!isNaverSource) {
       setMenuError('메뉴 정보를 가져올 수 없습니다.');
       return;
     }
@@ -66,7 +68,7 @@ export function ResultScreen({
 
   // Auto-fetch menu if winner has no menu items
   useEffect(() => {
-    if (menuItems.length === 0 && /^\d+$/.test(winner.id)) {
+    if (menuItems.length === 0 && isNaverSource) {
       fetchMenu();
     }
   }, [winner.id, menuItems.length, fetchMenu]);
@@ -117,19 +119,19 @@ export function ResultScreen({
         {menuError && !menuLoading && (
           <div className="result-screen__menu-error">{menuError}</div>
         )}
-        {menuItems.length === 0 && !menuLoading && !menuError && /^\d+$/.test(winner.id) && (
+        {menuItems.length === 0 && !menuLoading && !menuError && isNaverSource && (
           <button className="result-screen__menu-fetch" onClick={fetchMenu}>
             메뉴 불러오기
           </button>
         )}
-        {!/^\d+$/.test(winner.id) && menuItems.length === 0 && !menuLoading && (
+        {menuItems.length === 0 && !menuLoading && (
           <a
             className="result-screen__menu-link"
-            href={`https://map.naver.com/p/search/${encodeURIComponent(winner.name)}`}
+            href={winner.naverMapUrl || `https://map.naver.com/p/search/${encodeURIComponent(winner.name)}`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            네이버에서 메뉴 보기
+            네이버 지도에서 보기
           </a>
         )}
       </div>

@@ -178,6 +178,7 @@ async function searchKakao(
     lng: parseFloat(item.x) || 0,
     phone: item.phone || '',
     naverMapUrl: `https://map.naver.com/p/search/${encodeURIComponent(item.place_name || '')}`,
+    source: 'kakao',
   }));
 
   return { results, total, page, totalPages };
