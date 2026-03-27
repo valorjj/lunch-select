@@ -22,7 +22,6 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
   const [filterSyllable, setFilterSyllable] = useState<number | null>(null);
   const [newWord, setNewWord] = useState('');
   const [newTheme, setNewTheme] = useState('food');
-  const [newSyllable, setNewSyllable] = useState(2);
   const [bulkText, setBulkText] = useState('');
   const [showBulk, setShowBulk] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
