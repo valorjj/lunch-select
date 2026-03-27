@@ -3,7 +3,7 @@ import { SearchResult } from '../types/restaurant';
 import './RestaurantSearch.scss';
 
 const SEARCH_API_BASE = '';
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 20;
 
 interface SearchResponse {
   results: SearchResult[];
@@ -32,7 +32,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
 
   const fetchResults = useCallback(async (searchQuery: string, start: number) => {
     const response = await fetch(
-      `${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(searchQuery)}&start=${start}`
+      `${SEARCH_API_BASE}/api/search?query=${encodeURIComponent(searchQuery)}&start=${start}&count=${PAGE_SIZE}`
     );
     if (!response.ok) throw new Error('검색에 실패했습니다.');
     const data: SearchResponse = await response.json();

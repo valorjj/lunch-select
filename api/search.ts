@@ -39,27 +39,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const startIndex = Math.max(1, Number(start) || 1);
+  const count = Math.min(20, Math.max(1, Number(req.query.count) || 20));
 
   try {
-    const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=${startIndex}&sort=comment`;
-
-    const response = await fetch(url, {
-      headers: {
-        'X-Naver-Client-Id': clientId,
-        'X-Naver-Client-Secret': clientSecret,
-      },
+    // Naver local search API max display=5, so we batch multiple requests
+    const batchSize = 5;
+    const numRequests = Math.ceil(count / batchSize);
+    const fetches = Array.from({ length: numRequests }, (_, i) => {
+      const batchStart = startIndex + i * batchSize;
+      const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=${batchSize}&start=${batchStart}&sort=comment`;
+      return fetch(url, {
+        headers: {
+          'X-Naver-Client-Id': clientId,
+          'X-Naver-Client-Secret': clientSecret,
+        },
+      }).then(async (r) => {
+        if (!r.ok) throw new Error(`Naver Search API error ${r.status}`);
+        return r.json();
+      });
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Naver Search API error ${response.status}: ${text}`);
-    }
+    const responses = await Promise.all(fetches);
+    const items: NaverSearchItem[] = responses.flatMap((d) => d.items || []);
+    const total: number = responses[0]?.total || 0;
 
-    const data = await response.json();
-    const items: NaverSearchItem[] = data.items || [];
-    const total: number = data.total || 0;
+    // Deduplicate by link/coordinates
+    const seen = new Set<string>();
+    const uniqueItems = items.filter((item) => {
+      const key = item.link || `${item.mapx}_${item.mapy}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
-    const results: SearchResult[] = items.map((item) => {
+    const results: SearchResult[] = uniqueItems.map((item) => {
       const placeId = extractPlaceId(item.link);
       const { lat, lng } = naverCoordToWgs84(Number(item.mapx), Number(item.mapy));
       const id = placeId || `${item.mapx}_${item.mapy}`;
