@@ -1,36 +1,66 @@
 import { Ladder, LadderRung, PathPoint } from '../../types/ladder';
 
 export function generateLadder(columns: number, rowCount: number): Ladder {
+  const gaps = columns - 1;
   const rungs: LadderRung[] = [];
 
-  for (let row = 0; row < rowCount; row++) {
-    // For each row, randomly add rungs between adjacent columns
-    // Ensure no two adjacent rungs in the same row (they'd overlap)
-    const usedCols = new Set<number>();
+  // Target: each gap gets roughly equal number of rungs
+  // Aim for ~40% density overall, spread evenly across all gaps
+  const targetPerGap = Math.max(2, Math.floor(rowCount * 0.4));
 
-    for (let col = 0; col < columns - 1; col++) {
-      if (usedCols.has(col)) continue;
+  // Divide rows into zones of equal size, one zone per target rung per gap
+  // This ensures rungs are vertically spread out, not clustered
+  for (let gap = 0; gap < gaps; gap++) {
+    // Pick `targetPerGap` rows for this gap, spread evenly across the height
+    const zoneSize = rowCount / targetPerGap;
+    for (let i = 0; i < targetPerGap; i++) {
+      const zoneStart = Math.floor(i * zoneSize);
+      const zoneEnd = Math.floor((i + 1) * zoneSize);
+      const row = zoneStart + Math.floor(Math.random() * (zoneEnd - zoneStart));
+      rungs.push({ row, leftCol: gap });
+    }
+  }
 
-      // ~40% chance of a rung at each position
-      if (Math.random() < 0.4) {
-        rungs.push({ row, leftCol: col });
-        usedCols.add(col);
-        usedCols.add(col + 1); // prevent adjacent rung
+  // Remove duplicates (same row + leftCol) and adjacency conflicts
+  // (two rungs in the same row sharing a column endpoint)
+  const seen = new Map<string, LadderRung>();
+  const shuffled = rungs.sort(() => Math.random() - 0.5);
+
+  for (const rung of shuffled) {
+    const key = `${rung.row}-${rung.leftCol}`;
+    // Check adjacency: no rung at (row, leftCol-1) or (row, leftCol+1) already placed
+    const adjLeft = `${rung.row}-${rung.leftCol - 1}`;
+    const adjRight = `${rung.row}-${rung.leftCol + 1}`;
+    if (!seen.has(key) && !seen.has(adjLeft) && !seen.has(adjRight)) {
+      seen.set(key, rung);
+    }
+  }
+
+  const finalRungs = Array.from(seen.values());
+
+  // Safety: ensure every gap has at least 2 rungs so no column is isolated
+  for (let gap = 0; gap < gaps; gap++) {
+    const count = finalRungs.filter((r) => r.leftCol === gap).length;
+    const needed = Math.max(0, 2 - count);
+    for (let i = 0; i < needed; i++) {
+      // Find an empty row for this gap
+      const usedRows = new Set(finalRungs.filter((r) => r.leftCol === gap).map((r) => r.row));
+      for (let row = 0; row < rowCount; row++) {
+        if (!usedRows.has(row)) {
+          // Check no adjacency conflict
+          const hasAdj = finalRungs.some(
+            (r) => r.row === row && (r.leftCol === gap - 1 || r.leftCol === gap + 1)
+          );
+          if (!hasAdj) {
+            finalRungs.push({ row, leftCol: gap });
+            break;
+          }
+        }
       }
     }
   }
 
-  // Ensure every gap between adjacent columns has at least one rung
-  // This prevents any column from being completely isolated
-  for (let col = 0; col < columns - 1; col++) {
-    const hasRung = rungs.some((r) => r.leftCol === col);
-    if (!hasRung) {
-      const row = Math.floor(Math.random() * rowCount);
-      rungs.push({ row, leftCol: col });
-    }
-  }
-
-  return { columns, rows: rowCount, rungs };
+  return { columns, rows: rowCount, rungs: finalRungs };
 }
 
 export function tracePath(ladder: Ladder, startCol: number): PathPoint[] {
