@@ -126,8 +126,9 @@ export function useRestaurants(storageKey: string = 'lunch-select-restaurants'):
       return next;
     });
 
-    // Fetch menu/thumbnail in background
-    const menuApiUrl = /^\d+$/.test(result.id)
+    // Fetch menu/thumbnail in background — use source to decide path, not numeric ID check
+    // (Kakao IDs can also be numeric)
+    const menuApiUrl = result.source !== 'kakao'
       ? `/api/place?id=${result.id}`
       : `/api/place?name=${encodeURIComponent(result.name)}&address=${encodeURIComponent(result.roadAddress || result.address || '')}`;
 

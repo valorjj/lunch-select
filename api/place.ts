@@ -106,7 +106,23 @@ function extractPlaceIdFromUrl(url: string): string | null {
   return null;
 }
 
+// Simple serial queue to prevent concurrent Naver Place requests
+let fetchQueue: Promise<any> = Promise.resolve();
+function enqueue<T>(fn: () => Promise<T>): Promise<T> {
+  const result = fetchQueue.then(fn, fn);
+  fetchQueue = result.then(() => {}, () => {});
+  return result;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
+  return enqueue(() => fetchPlaceDataImpl(placeId));
+}
+
+async function fetchPlaceDataImpl(placeId: string, retries = 2): Promise<NaverPlaceData> {
   console.log('[place] fetching placeId:', placeId);
 
   const response = await fetch(
@@ -122,8 +138,15 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
 
   console.log('[place] naver response status:', response.status);
 
+  if (response.status === 429 && retries > 0) {
+    const waitMs = (3 - retries) * 2000; // 2s, 4s
+    console.log(`[place] 429 rate limited, retrying in ${waitMs}ms (${retries} retries left)`);
+    await delay(waitMs);
+    return fetchPlaceDataImpl(placeId, retries - 1);
+  }
+
   if (!response.ok) {
-    throw new Error(`Naver place fetch failed: ${response.status}`);
+    throw new Error(`${response.status} ${response.statusText} from GET https://pcmap.place.naver.com/restaurant/${placeId}/home`);
   }
 
   const html = await response.text();

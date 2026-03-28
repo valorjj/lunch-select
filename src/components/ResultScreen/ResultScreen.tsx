@@ -45,12 +45,11 @@ export function ResultScreen({
     setMenuLoading(true);
     setMenuError(null);
     try {
-      // Use numeric Naver ID if available, otherwise cross-reference by name+address
-      const hasNaverId = /^\d+$/.test(winner.naverPlaceId || '') || /^\d+$/.test(winner.id);
-      const naverId = /^\d+$/.test(winner.id) ? winner.id : winner.naverPlaceId;
-      const apiUrl = hasNaverId
-        ? `/api/place?id=${naverId}`
-        : `/api/place?name=${encodeURIComponent(winner.name)}&address=${encodeURIComponent(winner.roadAddress || winner.address || '')}`;
+      // Use naverPlaceId if resolved, otherwise source-based: Naver ID directly or cross-ref by name
+      const isKakao = winner.source === 'kakao' && !winner.naverPlaceId;
+      const apiUrl = isKakao
+        ? `/api/place?name=${encodeURIComponent(winner.name)}&address=${encodeURIComponent(winner.roadAddress || winner.address || '')}`
+        : `/api/place?id=${winner.naverPlaceId || winner.id}`;
 
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error();
