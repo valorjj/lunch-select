@@ -210,7 +210,9 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
 
 function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
-  const numStr = priceStr.replace(/[^0-9]/g, '');
+  // Handle range prices like "13,000~14,900" — take the first price
+  const firstPrice = priceStr.split(/[~\-\/]/).at(0) || priceStr;
+  const numStr = firstPrice.replace(/[^0-9]/g, '');
   const num = parseInt(numStr, 10);
   return isNaN(num) ? null : num;
 }
