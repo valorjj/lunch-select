@@ -64,7 +64,7 @@ export function ResultScreen({
     } finally {
       setMenuLoading(false);
     }
-  }, [winner.id, winner.naverPlaceId, winner.name, winner.roadAddress, winner.address]);
+  }, [winner.id, winner.naverPlaceId, winner.name, winner.roadAddress, winner.address, winner.source]);
 
   // Auto-fetch menu if winner has no menu items
   useEffect(() => {
