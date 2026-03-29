@@ -137,7 +137,7 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
     }`,
   };
 
-  // Query 2: menus (separate to avoid WAF 400 error)
+  // Query 2: base menus (~7 representative items, separate to avoid WAF 400)
   const menuQuery = {
     operationName: 'getPlaceDetail',
     variables: { input: { id: placeId } },
@@ -153,10 +153,23 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
     }`,
   };
 
+  // Query 3: baemin menus (full menu list, only available for Baemin-listed restaurants)
+  const baeminQuery = {
+    operationName: 'getPlaceDetail',
+    variables: { input: { id: placeId } },
+    query: `query getPlaceDetail($input: PlaceDetailInput!) {
+      placeDetail(input: $input) {
+        baemin {
+          menus { name price }
+        }
+      }
+    }`,
+  };
+
   const referer = `https://pcmap.place.naver.com/restaurant/${placeId}/home`;
 
-  // Fire both queries in parallel
-  const [baseRes, menuRes] = await Promise.all([
+  // Fire all queries in parallel
+  const [baseRes, menuRes, baeminRes] = await Promise.all([
     fetch(GRAPHQL_URL, {
       method: 'POST',
       headers: { ...GRAPHQL_HEADERS, Referer: referer },
@@ -167,27 +180,35 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
       headers: { ...GRAPHQL_HEADERS, Referer: referer },
       body: JSON.stringify(menuQuery),
     }),
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
+      headers: { ...GRAPHQL_HEADERS, Referer: referer },
+      body: JSON.stringify(baeminQuery),
+    }),
   ]);
 
   if (!baseRes.ok) {
     throw new Error(`GraphQL base query failed: ${baseRes.status} ${baseRes.statusText}`);
   }
-  if (!menuRes.ok) {
-    throw new Error(`GraphQL menu query failed: ${menuRes.status} ${menuRes.statusText}`);
-  }
 
   const baseData = await baseRes.json();
-  const menuData = await menuRes.json();
+  const menuData = menuRes.ok ? await menuRes.json() : null;
+  const baeminData = baeminRes.ok ? await baeminRes.json() : null;
 
   const base = baseData?.data?.placeDetail?.base;
   if (!base) {
     throw new Error(`Place not found: ${placeId}`);
   }
 
-  const menuBase = menuData?.data?.placeDetail?.base;
-  const rawMenus: { name: string; price: string }[] = menuBase?.menus || [];
+  // Prefer baemin menus (full list) over base menus (~7 representative)
+  const baeminMenus: { name: string; price: string }[] =
+    baeminData?.data?.placeDetail?.baemin?.menus || [];
+  const baseMenus: { name: string; price: string }[] =
+    menuData?.data?.placeDetail?.base?.menus || [];
 
-  const menuItems = rawMenus.slice(0, 10).map((m) => ({
+  const rawMenus = baeminMenus.length > 0 ? baeminMenus : baseMenus;
+
+  const menuItems = rawMenus.map((m) => ({
     name: m.name || '',
     price: parsePrice(m.price || ''),
   }));
