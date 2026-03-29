@@ -58,82 +58,69 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // ──────────────────────────────────────────────
-// Provider 1: Naver Map internal search
+// Provider 1: Naver Place GraphQL search
 // ──────────────────────────────────────────────
 async function searchNaverMap(
   query: string,
   page: number,
   displayCount: number,
 ): Promise<{ results: SearchResult[]; total: number; page: number; totalPages: number }> {
-  // Try multiple URL patterns
-  const urls = [
-    `https://map.naver.com/p/api/search/allSearch?query=${encodeURIComponent(query)}&type=all&page=${page}&displayCount=${displayCount}&lang=ko`,
-    `https://map.naver.com/v5/api/search?caller=pcweb&query=${encodeURIComponent(query)}&type=all&page=${page}&displayCount=${displayCount}&lang=ko`,
-  ];
+  const start = (page - 1) * displayCount + 1;
 
-  let lastError = '';
-  for (const url of urls) {
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-          'Referer': 'https://map.naver.com/',
-          'Origin': 'https://map.naver.com',
-        },
-      });
-
-      if (!response.ok) {
-        lastError = `${url} → HTTP ${response.status}`;
-        continue;
+  const body = {
+    operationName: 'getRestaurants',
+    variables: {
+      input: { query, display: displayCount, start, deviceType: 'pcmap' },
+    },
+    query: `query getRestaurants($input: RestaurantListInput) {
+      restaurantList(input: $input) {
+        items { id name category address roadAddress x y phone imageUrl }
+        total
       }
+    }`,
+  };
 
-      const data = await response.json();
+  const response = await fetch('https://pcmap-api.place.naver.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': '*/*',
+      'Accept-Language': 'ko',
+      'Origin': 'https://pcmap.place.naver.com',
+      'Referer': 'https://pcmap.place.naver.com/',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
+    body: JSON.stringify(body),
+  });
 
-      // Try various response structures
-      const placeResult =
-        data?.result?.place ||
-        data?.result?.restaurant ||
-        data?.result?.cafe ||
-        data?.result?.food;
-
-      if (!placeResult?.list?.length) {
-        lastError = `${url} → no place list in response (keys: ${Object.keys(data?.result || data || {}).join(',')})`;
-        continue;
-      }
-
-      const total = placeResult.totalCount || placeResult.list.length;
-      const totalPages = Math.ceil(total / displayCount);
-
-      const results: SearchResult[] = placeResult.list.map((item: any) => {
-        const id = item.id || item.placeId || '';
-        const categories = Array.isArray(item.category)
-          ? item.category.join('>')
-          : (item.category || item.categoryName || '');
-
-        return {
-          id: String(id),
-          name: decodeHtmlEntities(item.name || item.title || ''),
-          category: categories,
-          address: item.address || item.jibunAddress || '',
-          roadAddress: item.roadAddress || item.fullRoadAddress || '',
-          lat: parseFloat(item.y || item.lat) || 0,
-          lng: parseFloat(item.x || item.lng) || 0,
-          phone: item.tel || item.phone || item.telephone || '',
-          naverMapUrl: id
-            ? `https://map.naver.com/p/entry/place/${id}`
-            : `https://map.naver.com/p/search/${encodeURIComponent(item.name || '')}`,
-        };
-      });
-
-      return { results, total, page, totalPages };
-    } catch (e: any) {
-      lastError = `${url} → ${e.message}`;
-    }
+  if (!response.ok) {
+    throw new Error(`Naver GraphQL search failed: ${response.status}`);
   }
 
-  throw new Error(lastError || 'All Naver Map URLs failed');
+  const data = await response.json();
+  const restaurantList = data?.data?.restaurantList;
+  if (!restaurantList?.items?.length) {
+    throw new Error('Naver GraphQL: empty results');
+  }
+
+  const total = restaurantList.total || restaurantList.items.length;
+  const totalPages = Math.ceil(total / displayCount);
+
+  const results: SearchResult[] = restaurantList.items.map((item: any) => ({
+    id: String(item.id || ''),
+    name: item.name || '',
+    category: item.category || '',
+    address: item.address || '',
+    roadAddress: item.roadAddress || '',
+    lat: parseFloat(item.y) || 0,
+    lng: parseFloat(item.x) || 0,
+    phone: item.phone || '',
+    naverMapUrl: item.id
+      ? `https://map.naver.com/p/entry/place/${item.id}`
+      : `https://map.naver.com/p/search/${encodeURIComponent(item.name || '')}`,
+  }));
+
+  return { results, total, page, totalPages };
 }
 
 // ──────────────────────────────────────────────

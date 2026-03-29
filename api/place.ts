@@ -237,42 +237,44 @@ async function resolveByNameAddress(name: string, address: string): Promise<stri
   const cached = getCrossRefCached(cacheKey);
   if (cached !== undefined) return cached;
 
-  const query = address ? `${name} ${address}` : name;
-  console.log('[place] cross-ref search:', query);
-
-  const urls = [
-    `https://map.naver.com/p/api/search/allSearch?query=${encodeURIComponent(query)}&type=all&page=1&displayCount=5&lang=ko`,
-    `https://map.naver.com/v5/api/search?caller=pcweb&query=${encodeURIComponent(query)}&type=all&page=1&displayCount=5&lang=ko`,
-  ];
-
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-    'Referer': 'https://map.naver.com/',
-    'Origin': 'https://map.naver.com',
-  };
-
+  // Try name only first, then with address if no match
+  const queries = [name, address ? `${name} ${address}` : null].filter(Boolean) as string[];
   const normalizedTarget = normalizeName(name);
 
-  for (const url of urls) {
+  for (const query of queries) {
+    console.log('[place] cross-ref GraphQL search:', query);
+
     try {
-      const response = await fetch(url, { headers });
+      const searchBody = {
+        operationName: 'getRestaurants',
+        variables: {
+          input: { query, display: 5, start: 1, deviceType: 'pcmap' },
+        },
+        query: `query getRestaurants($input: RestaurantListInput) {
+          restaurantList(input: $input) {
+            items { id name category address roadAddress x y phone imageUrl }
+            total
+          }
+        }`,
+      };
+
+      const response = await fetch(GRAPHQL_URL, {
+        method: 'POST',
+        headers: { ...GRAPHQL_HEADERS, Referer: 'https://pcmap.place.naver.com/' },
+        body: JSON.stringify(searchBody),
+      });
+
       if (!response.ok) continue;
 
       const data = await response.json();
-      const placeResult =
-        data?.result?.place ||
-        data?.result?.restaurant ||
-        data?.result?.cafe ||
-        data?.result?.food;
+      const items = data?.data?.restaurantList?.items;
+      if (!items?.length) continue;
 
-      if (!placeResult?.list?.length) continue;
-
-      for (const item of placeResult.list) {
-        const itemName = normalizeName(item.name || item.title || '');
-        const itemId = String(item.id || item.placeId || '');
-        if (!itemId || !/^\d+$/.test(itemId)) continue;
+      // Find best match by name similarity
+      for (const item of items) {
+        const itemName = normalizeName(item.name || '');
+        const itemId = String(item.id || '');
+        if (!itemId) continue;
 
         if (
           itemName === normalizedTarget ||
@@ -285,15 +287,15 @@ async function resolveByNameAddress(name: string, address: string): Promise<stri
         }
       }
 
-      const firstItem = placeResult.list[0];
-      const firstId = String(firstItem.id || firstItem.placeId || '');
-      if (firstId && /^\d+$/.test(firstId)) {
-        console.log('[place] cross-ref fallback to first result:', name, '->', firstId, `(${firstItem.name})`);
+      // Fallback to first result
+      const firstId = String(items[0].id || '');
+      if (firstId) {
+        console.log('[place] cross-ref fallback to first result:', name, '->', firstId, `(${items[0].name})`);
         crossRefCache.set(cacheKey, { naverId: firstId, timestamp: Date.now() });
         return firstId;
       }
     } catch (e: any) {
-      console.error('[place] cross-ref search error:', e.message);
+      console.error('[place] cross-ref GraphQL search error:', e.message);
     }
   }
 
