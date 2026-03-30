@@ -170,10 +170,23 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
     }`,
   };
 
+  // Query 4: images
+  const imageQuery = {
+    operationName: 'getPlaceDetail',
+    variables: { input: { id: placeId } },
+    query: `query getPlaceDetail($input: PlaceDetailInput!) {
+      placeDetail(input: $input) {
+        images {
+          images { origin }
+        }
+      }
+    }`,
+  };
+
   const referer = `https://pcmap.place.naver.com/restaurant/${placeId}/home`;
 
   // Fire all queries in parallel
-  const [baseRes, menuRes, baeminRes] = await Promise.all([
+  const [baseRes, menuRes, baeminRes, imageRes] = await Promise.all([
     fetch(GRAPHQL_URL, {
       method: 'POST',
       headers: { ...GRAPHQL_HEADERS, Referer: referer },
@@ -189,6 +202,11 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
       headers: { ...GRAPHQL_HEADERS, Referer: referer },
       body: JSON.stringify(baeminQuery),
     }),
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
+      headers: { ...GRAPHQL_HEADERS, Referer: referer },
+      body: JSON.stringify(imageQuery),
+    }),
   ]);
 
   if (!baseRes.ok) {
@@ -197,6 +215,7 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
 
   const baseData = await baseRes.json();
   const menuData = menuRes.ok ? await menuRes.json() : null;
+  const imageData = imageRes.ok ? await imageRes.json() : null;
   const baeminData = baeminRes.ok ? await baeminRes.json() : null;
 
   const base = baseData?.data?.placeDetail?.base;
@@ -224,7 +243,7 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
     name: base.name || '',
     category: base.category || '',
     menuItems,
-    thumbnail: '',
+    thumbnail: imageData?.data?.placeDetail?.images?.images?.[0]?.origin || '',
     address: base.address || '',
     roadAddress: base.roadAddress || '',
     lat: Number(coord.y) || 0,
