@@ -3,6 +3,42 @@
   width: 100%;
   margin-bottom: 1.5rem;
 
+  &__areas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.6rem;
+  }
+
+  &__area {
+    padding: 0.25rem 0.55rem;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.12s;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    &--active {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      color: #fff;
+
+      &:hover {
+        background: var(--color-primary-dark);
+        color: #fff;
+      }
+    }
+  }
+
   &__form {
     display: flex;
     gap: 0.75rem;

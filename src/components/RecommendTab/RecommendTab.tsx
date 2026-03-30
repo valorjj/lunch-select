@@ -90,17 +90,21 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
     }
   }, []);
 
-  useEffect(() => {
-    if (activeLocation) {
-      fetchRecommendations(activeLocation.lat, activeLocation.lng, 1);
-    }
-  }, [activeLocation, fetchRecommendations]);
+  const [hasFetched, setHasFetched] = useState(false);
 
+  // Request GPS only when GPS mode selected
   useEffect(() => {
     if (locationMode === 'gps' && !gpsLocation && !geoLoading) {
       requestLocation();
     }
   }, [locationMode, gpsLocation, geoLoading, requestLocation]);
+
+  const handleSearch = () => {
+    if (activeLocation) {
+      setHasFetched(true);
+      fetchRecommendations(activeLocation.lat, activeLocation.lng, 1);
+    }
+  };
 
   const handleModeChange = (mode: LocationMode) => {
     setLocationMode(mode);
@@ -246,6 +250,14 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
               <span>50,000{'\uC6D0'}</span>
             </div>
           </div>
+
+          <button
+            className="recommend-tab__search-btn"
+            onClick={handleSearch}
+            disabled={isLoading || !activeLocation}
+          >
+            {isLoading ? '\uAC80\uC0C9 \uC911...' : '\uB9DB\uC9D1 \uAC80\uC0C9'}
+          </button>
         </>
       )}
 
@@ -320,8 +332,8 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
         </>
       )}
 
-      {/* Empty state */}
-      {!isLoading && !geoLoading && results.length === 0 && !error && activeLocation && (
+      {/* Empty state — only after search */}
+      {hasFetched && !isLoading && !geoLoading && results.length === 0 && !error && (
         <div className="recommend-tab__empty">
           <p>{'\uC8FC\uBCC0 1km \uC774\uB0B4\uC5D0 \uC74C\uC2DD\uC810\uC774 \uC5C6\uC2B5\uB2C8\uB2E4'}</p>
         </div>

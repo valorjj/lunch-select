@@ -58,6 +58,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [history, setHistory] = useState<string[]>(loadHistory);
   const [showHistory, setShowHistory] = useState(false);
+  const [areaPrefix, setAreaPrefix] = useState('');
 
   const fetchPage = useCallback(async (searchQuery: string, page: number) => {
     const response = await fetch(
@@ -75,11 +76,12 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
       return;
     }
 
+    const searchQuery = areaPrefix ? `${areaPrefix} ${trimmed}` : trimmed;
     setIsSearching(true);
     setError(null);
     setAddedIds(new Set());
     try {
-      const data = await fetchPage(trimmed, 1);
+      const data = await fetchPage(searchQuery, 1);
       setResults(data.results);
       setTotal(data.total);
       setTotalPages(data.totalPages);
@@ -87,16 +89,16 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
       setShowResults(true);
       setShowHistory(false);
       setHasSearched(true);
-      setSearchedQuery(trimmed);
+      setSearchedQuery(searchQuery);
       addToHistory(trimmed);
       setHistory(loadHistory());
       // Log search for statistics (fire and forget)
-      const parts = trimmed.split(/\s+/);
-      const region = parts.length > 1 ? parts[0] : null;
+      const parts = searchQuery.split(/\s+/);
+      const region = areaPrefix || (parts.length > 1 ? parts[0] : null);
       apiFetch('/api/search-logs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: trimmed, region }),
+        body: JSON.stringify({ keyword: searchQuery, region }),
       }).catch(() => {});
     } catch (err: any) {
       setError(err.message || '검색 중 오류가 발생했습니다.');
@@ -107,7 +109,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
     } finally {
       setIsSearching(false);
     }
-  }, [query, fetchPage]);
+  }, [query, areaPrefix, fetchPage]);
 
   const goToPage = useCallback(async (page: number) => {
     setIsSearching(true);
@@ -173,9 +175,28 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
     setHistory(updated);
   };
 
+  const AREA_PRESETS = ['강남', '역삼', '서초', '홍대', '신촌', '이태원', '여의도', '종로', '잠실', '판교', '구로'];
+
   return (
     <div className="restaurant-search">
       <GlobalLoader visible={isSearching} message="맛집 검색 중..." />
+      <div className="restaurant-search__areas">
+        <button
+          className={`restaurant-search__area ${!areaPrefix ? 'restaurant-search__area--active' : ''}`}
+          onClick={() => setAreaPrefix('')}
+        >
+          전체
+        </button>
+        {AREA_PRESETS.map((area) => (
+          <button
+            key={area}
+            className={`restaurant-search__area ${areaPrefix === area ? 'restaurant-search__area--active' : ''}`}
+            onClick={() => setAreaPrefix(areaPrefix === area ? '' : area)}
+          >
+            {area}
+          </button>
+        ))}
+      </div>
       <form className="restaurant-search__form" onSubmit={handleSubmit}>
         <input
           type="text"
