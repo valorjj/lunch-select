@@ -425,6 +425,198 @@
   }
 }
 
+  // Selected subway station chip
+  &__selected-station {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(var(--color-primary-rgb), 0.06);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--color-text);
+
+    button {
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background: none;
+      color: var(--color-primary);
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+
+      &:hover {
+        background: var(--color-primary);
+        color: #fff;
+      }
+    }
+  }
+}
+
+// ── Subway Modal ──
+.subway-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+  animation: subway-fade-in 0.2s ease;
+
+  &__card {
+    position: relative;
+    background: var(--color-surface);
+    border-radius: 16px;
+    padding: 1.25rem;
+    max-width: 560px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+
+    &:hover { color: var(--color-text); }
+  }
+
+  &__search {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    background: var(--color-background);
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+
+    &::placeholder { color: var(--color-text-muted); }
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+  }
+
+  &__lines {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__line {
+    padding: 0.25rem 0.5rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: 6px;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+
+    &:hover {
+      border-color: var(--color-text-muted);
+    }
+
+    &--active {
+      border-width: 2px;
+    }
+  }
+
+  &__stations {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  &__search-label {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+  }
+
+  &__station-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  &__station {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    background: none;
+    color: var(--color-text);
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.12s;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      background: rgba(var(--color-primary-rgb), 0.05);
+    }
+  }
+
+  &__station-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+@keyframes subway-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes recommend-spin {
   to { transform: rotate(360deg); }
 }

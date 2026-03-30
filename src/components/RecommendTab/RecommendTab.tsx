@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SearchResult } from '../../types/restaurant';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { SUBWAY_LINES } from '../../data/subwayLines';
 import './RecommendTab.scss';
 
 interface RecommendResult extends SearchResult {
@@ -47,46 +48,20 @@ const SEOUL_GU: PresetLocation[] = [
   { name: '중랑구', lat: 37.6066, lng: 127.0927 },
 ];
 
-const SUBWAY_STATIONS: PresetLocation[] = [
-  { name: '강남역', lat: 37.4979, lng: 127.0276 },
-  { name: '역삼역', lat: 37.5007, lng: 127.0365 },
-  { name: '삼성역', lat: 37.5089, lng: 127.0637 },
-  { name: '선릉역', lat: 37.5045, lng: 127.0490 },
-  { name: '교대역', lat: 37.4934, lng: 127.0145 },
-  { name: '잠실역', lat: 37.5133, lng: 127.1001 },
-  { name: '홍대입구역', lat: 37.5571, lng: 126.9246 },
-  { name: '합정역', lat: 37.5497, lng: 126.9138 },
-  { name: '신촌역', lat: 37.5553, lng: 126.9372 },
-  { name: '이태원역', lat: 37.5345, lng: 126.9945 },
-  { name: '여의도역', lat: 37.5217, lng: 126.9243 },
-  { name: '종각역', lat: 37.5700, lng: 126.9830 },
-  { name: '을지로입구역', lat: 37.5660, lng: 126.9822 },
-  { name: '시청역', lat: 37.5657, lng: 126.9770 },
-  { name: '광화문역', lat: 37.5711, lng: 126.9764 },
-  { name: '신림역', lat: 37.4841, lng: 126.9298 },
-  { name: '건대입구역', lat: 37.5404, lng: 127.0694 },
-  { name: '왕십리역', lat: 37.5614, lng: 127.0371 },
-  { name: '신논현역', lat: 37.5049, lng: 127.0253 },
-  { name: '판교역', lat: 37.3948, lng: 127.1112 },
-  { name: '구로디지털단지역', lat: 37.4851, lng: 126.9016 },
-  { name: '가산디지털단지역', lat: 37.4816, lng: 126.8826 },
-  { name: '사당역', lat: 37.4766, lng: 126.9816 },
-  { name: '노량진역', lat: 37.5133, lng: 126.9427 },
-];
-
 function formatDistance(meters: number): string {
   if (meters < 1000) return `${meters}m`;
   return `${(meters / 1000).toFixed(1)}km`;
 }
 
 function formatBudget(won: number): string {
-  return new Intl.NumberFormat('ko-KR').format(won) + '원';
+  return new Intl.NumberFormat('ko-KR').format(won) + '\uC6D0';
 }
 
 export function RecommendTab({ onSelect }: RecommendTabProps) {
   const { location: gpsLocation, isLoading: geoLoading, error: geoError, requestLocation } = useGeolocation(false);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
   const [selectedPreset, setSelectedPreset] = useState<PresetLocation | null>(null);
+  const [showSubwayModal, setShowSubwayModal] = useState(false);
   const [results, setResults] = useState<RecommendResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +70,6 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
-  // The active location based on mode
   const activeLocation = locationMode === 'gps' ? gpsLocation : selectedPreset;
 
   const fetchRecommendations = useCallback(async (lat: number, lng: number, p: number) => {
@@ -109,21 +83,19 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
       setTotalPages(data.totalPages || 0);
       setPage(p);
     } catch {
-      setError('주변 음식점을 불러오는 데 실패했습니다.');
+      setError('\uC8FC\uBCC0 \uC74C\uC2DD\uC810\uC744 \uBD88\uB7EC\uC624\uB294 \uB370 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
       setResults([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Fetch when active location changes
   useEffect(() => {
     if (activeLocation) {
       fetchRecommendations(activeLocation.lat, activeLocation.lng, 1);
     }
   }, [activeLocation, fetchRecommendations]);
 
-  // Request GPS when GPS mode is selected
   useEffect(() => {
     if (locationMode === 'gps' && !gpsLocation && !geoLoading) {
       requestLocation();
@@ -132,13 +104,22 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
 
   const handleModeChange = (mode: LocationMode) => {
     setLocationMode(mode);
-    setSelectedPreset(null);
-    setResults([]);
-    setPage(1);
+    if (mode === 'subway') {
+      setShowSubwayModal(true);
+    } else {
+      setSelectedPreset(null);
+      setResults([]);
+      setPage(1);
+    }
   };
 
   const handlePresetSelect = (preset: PresetLocation) => {
     setSelectedPreset(preset);
+  };
+
+  const handleSubwaySelect = (station: { name: string; lat: number; lng: number }) => {
+    setSelectedPreset({ name: `${station.name}\uC5ED`, lat: station.lat, lng: station.lng });
+    setShowSubwayModal(false);
   };
 
   const handleSelect = (result: RecommendResult) => {
@@ -151,10 +132,10 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   };
 
   const locationLabel = locationMode === 'gps'
-    ? (geoLoading ? '위치 확인 중...' : '현재 위치 기반 추천')
+    ? (geoLoading ? '\uC704\uCE58 \uD655\uC778 \uC911...' : '\uD604\uC7AC \uC704\uCE58 \uAE30\uBC18 \uCD94\uCC9C')
     : selectedPreset
-    ? `${selectedPreset.name} 주변 추천`
-    : '지역을 선택해주세요';
+    ? `${selectedPreset.name} \uC8FC\uBCC0 \uCD94\uCC9C`
+    : '\uC9C0\uC5ED\uC744 \uC120\uD0DD\uD574\uC8FC\uC138\uC694';
 
   return (
     <div className="recommend-tab">
@@ -167,7 +148,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
           </svg>
-          현재 위치
+          {'\uD604\uC7AC \uC704\uCE58'}
         </button>
         <button
           className={`recommend-tab__mode ${locationMode === 'gu' ? 'recommend-tab__mode--active' : ''}`}
@@ -176,23 +157,23 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/>
           </svg>
-          서울 구별
+          {'\uC11C\uC6B8 \uAD6C\uBCC4'}
         </button>
         <button
           className={`recommend-tab__mode ${locationMode === 'subway' ? 'recommend-tab__mode--active' : ''}`}
-          onClick={() => handleModeChange('subway')}
+          onClick={() => { setLocationMode('subway'); setShowSubwayModal(true); }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="4" y="3" width="16" height="14" rx="3"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="8" y1="17" x2="5" y2="21"/><line x1="16" y1="17" x2="19" y2="21"/><circle cx="9" cy="7" r="1" fill="currentColor"/><circle cx="15" cy="7" r="1" fill="currentColor"/>
           </svg>
-          지하철역
+          {'\uC9C0\uD558\uCCA0\uC5ED'}
         </button>
       </div>
 
-      {/* Preset location picker */}
-      {locationMode !== 'gps' && (
+      {/* Gu preset chips */}
+      {locationMode === 'gu' && (
         <div className="recommend-tab__presets">
-          {(locationMode === 'gu' ? SEOUL_GU : SUBWAY_STATIONS).map((preset) => (
+          {SEOUL_GU.map((preset) => (
             <button
               key={preset.name}
               className={`recommend-tab__preset ${selectedPreset?.name === preset.name ? 'recommend-tab__preset--active' : ''}`}
@@ -201,6 +182,14 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
               {preset.name}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Selected subway station chip */}
+      {locationMode === 'subway' && selectedPreset && (
+        <div className="recommend-tab__selected-station">
+          <span>{selectedPreset.name}</span>
+          <button onClick={() => setShowSubwayModal(true)}>{'\uBCC0\uACBD'}</button>
         </div>
       )}
 
@@ -213,15 +202,15 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
               <circle cx="12" cy="10" r="3"/>
             </svg>
           </div>
-          <h3>위치 권한이 필요합니다</h3>
+          <h3>{'\uC704\uCE58 \uAD8C\uD55C\uC774 \uD544\uC694\uD569\uB2C8\uB2E4'}</h3>
           <p>{geoError}</p>
           <button className="recommend-tab__permission-btn" onClick={requestLocation}>
-            위치 허용하기
+            {'\uC704\uCE58 \uD5C8\uC6A9\uD558\uAE30'}
           </button>
         </div>
       )}
 
-      {/* Location status + Budget (only when location is active) */}
+      {/* Location status + Budget */}
       {(activeLocation || (locationMode === 'gps' && geoLoading)) && (
         <>
           <div className="recommend-tab__location">
@@ -231,7 +220,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
             </svg>
             <span>{locationLabel}</span>
             {locationMode === 'gps' && activeLocation && (
-              <button className="recommend-tab__refresh" onClick={requestLocation} title="위치 새로고침">
+              <button className="recommend-tab__refresh" onClick={requestLocation} title={'\uC704\uCE58 \uC0C8\uB85C\uACE0\uCE68'}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                 </svg>
@@ -241,7 +230,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
 
           <div className="recommend-tab__budget">
             <label className="recommend-tab__budget-label">
-              점심 예산: <strong>{formatBudget(budget)}</strong> 이하
+              {'\uC810\uC2EC \uC608\uC0B0: '}<strong>{formatBudget(budget)}</strong>{' \uC774\uD558'}
             </label>
             <input
               type="range"
@@ -253,8 +242,8 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
               onChange={(e) => setBudget(Number(e.target.value))}
             />
             <div className="recommend-tab__budget-range">
-              <span>5,000원</span>
-              <span>50,000원</span>
+              <span>5,000{'\uC6D0'}</span>
+              <span>50,000{'\uC6D0'}</span>
             </div>
           </div>
         </>
@@ -264,7 +253,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
       {(isLoading || (locationMode === 'gps' && geoLoading)) && (
         <div className="recommend-tab__loading">
           <div className="recommend-tab__spinner" />
-          <span>{geoLoading ? '위치를 확인하고 있어요...' : '주변 맛집을 찾고 있어요...'}</span>
+          <span>{geoLoading ? '\uC704\uCE58\uB97C \uD655\uC778\uD558\uACE0 \uC788\uC5B4\uC694...' : '\uC8FC\uBCC0 \uB9DB\uC9D1\uC744 \uCC3E\uACE0 \uC788\uC5B4\uC694...'}</span>
         </div>
       )}
 
@@ -277,7 +266,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
       {!isLoading && !geoLoading && results.length > 0 && (
         <>
           <div className="recommend-tab__count">
-            주변 음식점 <strong>{results.length}</strong>곳
+            {'\uC8FC\uBCC0 \uC74C\uC2DD\uC810 '}<strong>{results.length}</strong>{'\uACF3'}
           </div>
           <div className="recommend-tab__grid">
             {results.map((r) => {
@@ -310,7 +299,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
                     onClick={() => handleSelect(r)}
                     disabled={isAdded}
                   >
-                    {isAdded ? '추가됨' : '+ 게임에 추가'}
+                    {isAdded ? '\uCD94\uAC00\uB428' : '+ \uAC8C\uC784\uC5D0 \uCD94\uAC00'}
                   </button>
                 </div>
               );
@@ -320,11 +309,11 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
           {totalPages > 1 && (
             <div className="recommend-tab__pagination">
               <button disabled={page <= 1 || isLoading} onClick={() => handlePageChange(page - 1)}>
-                &lsaquo; 이전
+                {'\u2039 \uC774\uC804'}
               </button>
               <span>{page} / {totalPages}</span>
               <button disabled={page >= totalPages || isLoading} onClick={() => handlePageChange(page + 1)}>
-                다음 &rsaquo;
+                {'\uB2E4\uC74C \u203A'}
               </button>
             </div>
           )}
@@ -334,18 +323,116 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
       {/* Empty state */}
       {!isLoading && !geoLoading && results.length === 0 && !error && activeLocation && (
         <div className="recommend-tab__empty">
-          <span>&#x1F37D;&#xFE0F;</span>
-          <p>주변 1km 이내에 음식점이 없습니다</p>
+          <p>{'\uC8FC\uBCC0 1km \uC774\uB0B4\uC5D0 \uC74C\uC2DD\uC810\uC774 \uC5C6\uC2B5\uB2C8\uB2E4'}</p>
         </div>
       )}
 
       {/* No location selected prompt */}
-      {locationMode !== 'gps' && !selectedPreset && (
+      {locationMode === 'gu' && !selectedPreset && (
         <div className="recommend-tab__empty">
-          <span>{locationMode === 'gu' ? '&#x1F3D8;&#xFE0F;' : '&#x1F687;'}</span>
-          <p>{locationMode === 'gu' ? '구를 선택해주세요' : '지하철역을 선택해주세요'}</p>
+          <p>{'\uAD6C\uB97C \uC120\uD0DD\uD574\uC8FC\uC138\uC694'}</p>
         </div>
       )}
+      {locationMode === 'subway' && !selectedPreset && !showSubwayModal && (
+        <div className="recommend-tab__empty">
+          <button className="recommend-tab__permission-btn" onClick={() => setShowSubwayModal(true)}>
+            {'\uC9C0\uD558\uCCA0\uC5ED \uC120\uD0DD\uD558\uAE30'}
+          </button>
+        </div>
+      )}
+
+      {/* Subway station modal */}
+      {showSubwayModal && (
+        <SubwayModal
+          onSelect={handleSubwaySelect}
+          onClose={() => setShowSubwayModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Subway Station Modal ──
+function SubwayModal({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (station: { name: string; lat: number; lng: number }) => void;
+  onClose: () => void;
+}) {
+  const [selectedLine, setSelectedLine] = useState(SUBWAY_LINES[0].line);
+  const [search, setSearch] = useState('');
+
+  const currentLine = SUBWAY_LINES.find((l) => l.line === selectedLine)!;
+
+  const filteredStations = search
+    ? SUBWAY_LINES.flatMap((l) =>
+        l.stations
+          .filter((s) => s.name.includes(search))
+          .map((s) => ({ ...s, line: l.line, color: l.color }))
+      )
+    : currentLine.stations.map((s) => ({ ...s, line: currentLine.line, color: currentLine.color }));
+
+  return (
+    <div className="subway-modal" onClick={onClose}>
+      <div className="subway-modal__card" onClick={(e) => e.stopPropagation()}>
+        <div className="subway-modal__header">
+          <h3>{'\uC9C0\uD558\uCCA0\uC5ED \uC120\uD0DD'}</h3>
+          <button className="subway-modal__close" onClick={onClose}>&times;</button>
+        </div>
+
+        {/* Search */}
+        <input
+          className="subway-modal__search"
+          type="text"
+          placeholder={'\uC5ED\uBA85 \uAC80\uC0C9 (\uC608: \uAC15\uB0A8)'}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          autoFocus
+        />
+
+        {/* Line tabs */}
+        {!search && (
+          <div className="subway-modal__lines">
+            {SUBWAY_LINES.map((l) => (
+              <button
+                key={l.line}
+                className={`subway-modal__line ${selectedLine === l.line ? 'subway-modal__line--active' : ''}`}
+                style={{
+                  borderColor: selectedLine === l.line ? l.color : undefined,
+                  color: selectedLine === l.line ? l.color : undefined,
+                  backgroundColor: selectedLine === l.line ? `${l.color}12` : undefined,
+                }}
+                onClick={() => setSelectedLine(l.line)}
+              >
+                {l.line}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Station list */}
+        <div className="subway-modal__stations">
+          {search && <div className="subway-modal__search-label">{`"${search}" \uAC80\uC0C9 \uACB0\uACFC (${filteredStations.length}\uAC74)`}</div>}
+          {filteredStations.length === 0 && (
+            <div className="subway-modal__empty">{'\uAC80\uC0C9 \uACB0\uACFC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4'}</div>
+          )}
+          <div className="subway-modal__station-grid">
+            {filteredStations.map((s, i) => (
+              <button
+                key={`${s.line}-${s.name}-${i}`}
+                className="subway-modal__station"
+                onClick={() => onSelect(s)}
+              >
+                {search && (
+                  <span className="subway-modal__station-dot" style={{ background: s.color }} />
+                )}
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
