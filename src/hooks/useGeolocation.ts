@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface GeolocationResult {
   lat: number;
@@ -12,14 +12,40 @@ interface UseGeolocationReturn {
   requestLocation: () => void;
 }
 
-export function useGeolocation(): UseGeolocationReturn {
-  const [location, setLocation] = useState<GeolocationResult | null>(null);
+const CACHE_KEY = 'lunch-select-geolocation';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCachedPosition(): GeolocationResult | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (Date.now() - data.timestamp > CACHE_TTL) return null;
+    return { lat: data.lat, lng: data.lng };
+  } catch { return null; }
+}
+
+function cachePosition(lat: number, lng: number) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ lat, lng, timestamp: Date.now() }));
+  } catch { /* ignore */ }
+}
+
+export function useGeolocation(autoRequest = false): UseGeolocationReturn {
+  const [location, setLocation] = useState<GeolocationResult | null>(getCachedPosition);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const requestLocation = useCallback(() => {
+    const cached = getCachedPosition();
+    if (cached) {
+      setLocation(cached);
+      setError(null);
+      return;
+    }
+
     if (!navigator.geolocation) {
-      setError('이 브라우저에서는 위치 서비스를 지원하지 않습니다.');
+      setError('브라우저가 위치 서비스를 지원하지 않습니다.');
       return;
     }
 
@@ -28,11 +54,11 @@ export function useGeolocation(): UseGeolocationReturn {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+        const { latitude, longitude } = position.coords;
+        setLocation({ lat: latitude, lng: longitude });
+        setError(null);
         setIsLoading(false);
+        cachePosition(latitude, longitude);
       },
       (err) => {
         let message = '위치를 가져올 수 없습니다.';
@@ -44,13 +70,15 @@ export function useGeolocation(): UseGeolocationReturn {
         setError(message);
         setIsLoading(false);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000,
-      }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: CACHE_TTL },
     );
   }, []);
+
+  useEffect(() => {
+    if (autoRequest && !location) {
+      requestLocation();
+    }
+  }, [autoRequest, location, requestLocation]);
 
   return { location, isLoading, error, requestLocation };
 }

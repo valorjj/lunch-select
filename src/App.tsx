@@ -16,6 +16,7 @@ import { BookmarkSection } from './components/BookmarkSection/BookmarkSection';
 import { VisitorCounter } from './components/VisitorCounter/VisitorCounter';
 import { AdminPanel } from './components/AdminPanel/AdminPanel';
 import { ArchitectureModal } from './components/ArchitectureModal/ArchitectureModal';
+import { RecommendTab } from './components/RecommendTab/RecommendTab';
 import { useTheme } from './hooks/useTheme';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { decodeSharedResult } from './components/SharePanel/SharePanel';
@@ -59,6 +60,7 @@ function App() {
   // Active tab state
   const isRestaurant = activeTab === 'restaurant';
   const isGame = activeTab === 'game';
+  const isRecommend = activeTab === 'recommend';
   const store = isRestaurant ? restaurantStore : cafeStore;
   const phase = isRestaurant ? restaurantPhase : cafePhase;
   const setPhase = isRestaurant ? setRestaurantPhase : setCafePhase;
@@ -92,6 +94,8 @@ function App() {
 
   const headerTitle = isGame ? (
     <>꼬들 <span>게임</span></>
+  ) : isRecommend ? (
+    <>오늘 <span>뭐 먹지?</span></>
   ) : isRestaurant ? (
     <>점심 <span>뭐 먹지?</span></>
   ) : (
@@ -100,6 +104,8 @@ function App() {
 
   const headerDesc = isGame
     ? '한글 단어를 맞혀보세요!'
+    : isRecommend
+    ? '현재 위치 기반으로 주변 맛집을 추천해드려요'
     : isRestaurant
     ? '음식점 이름을 검색해서 추가하세요'
     : '카페 이름을 검색해서 추가하세요';
@@ -115,7 +121,15 @@ function App() {
           <VisitorCounter />
           <div className="app__header-right">
             <button className="app__theme-btn" onClick={toggleTheme} title={theme === 'light' ? '다크 모드' : '라이트 모드'}>
-              {theme === 'light' ? '\u{1F319}' : '\u2600\uFE0F'}
+              {theme === 'light' ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              )}
             </button>
             <button className="app__arch-btn" onClick={() => setShowArch(true)}>Architecture</button>
             {user && (user as any).isAdmin && (
@@ -148,7 +162,13 @@ function App() {
           </div>
         )}
 
-        {!isGame && phase === 'input' && (
+        {isRecommend && (
+          <div className="fade-in">
+            <RecommendTab onSelect={restaurantStore.addFromSearch} />
+          </div>
+        )}
+
+        {!isGame && !isRecommend && phase === 'input' && (
           <div className="fade-in">
             <RestaurantSearch
               onSelect={store.addFromSearch}
@@ -176,7 +196,7 @@ function App() {
           </div>
         )}
 
-        {!isGame && phase === 'game' && (
+        {!isGame && !isRecommend && phase === 'game' && (
           <div className="fade-in">
             <button className="app__back-button" onClick={handleBackToInput}>
               &#8592; 뒤로 가기
@@ -209,7 +229,7 @@ function App() {
           </div>
         )}
 
-        {!isGame && phase === 'result' && winner && (
+        {!isGame && !isRecommend && phase === 'result' && winner && (
           <div className="fade-in">
             <ResultScreen
               winner={winner}
