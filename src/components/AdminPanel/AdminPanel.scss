@@ -208,6 +208,18 @@
     min-width: 60px;
   }
 
+  &__badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.1rem 0.35rem;
+    background: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+    font-size: 0.65rem;
+    font-weight: 700;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
   &__word-meta {
     font-size: 0.75rem;
     color: var(--color-text-muted);

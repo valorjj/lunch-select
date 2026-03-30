@@ -38,7 +38,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const [results, setResults] = useState<RecommendResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [budget, setBudget] = useState(20000);
+  const [budget, setBudget] = useState(15000);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 

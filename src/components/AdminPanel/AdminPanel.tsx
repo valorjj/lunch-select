@@ -17,7 +17,7 @@ interface AdminPanelProps {
   isSuperAdmin?: boolean;
 }
 
-type AdminTab = 'words' | 'stats' | 'admins';
+type AdminTab = 'words' | 'stats' | 'users' | 'admins';
 
 interface SearchStats {
   period: string;
@@ -33,6 +33,15 @@ interface AdminUser {
   provider: string;
 }
 
+interface AppUser {
+  id: number;
+  email: string;
+  name: string;
+  provider: string;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
 export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
   const [tab, setTab] = useState<AdminTab>('words');
   const [words, setWords] = useState<GameWord[]>([]);
@@ -44,6 +53,9 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
   const [statsLoading, setStatsLoading] = useState(false);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [allUsers, setAllUsers] = useState<AppUser[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [filterTheme, setFilterTheme] = useState<string>('all');
   const [filterSyllable, setFilterSyllable] = useState<number | null>(null);
   const [newWord, setNewWord] = useState('');
@@ -72,6 +84,18 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
       const res = await apiFetch(`/api/search-logs/stats?days=${days}`);
       if (res.ok) setStats(await res.json());
     } catch {} finally { setStatsLoading(false); }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const res = await apiFetch('/api/admin/users');
+      if (res.ok) {
+        const data = await res.json();
+        setAllUsers(data.users || []);
+        setTotalUsers(data.total || 0);
+      }
+    } catch {} finally { setUsersLoading(false); }
   }, []);
 
   const fetchAdmins = useCallback(async () => {
@@ -115,6 +139,10 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
   useEffect(() => {
     if (tab === 'admins') fetchAdmins();
   }, [tab, fetchAdmins]);
+
+  useEffect(() => {
+    if (tab === 'users') fetchUsers();
+  }, [tab, fetchUsers]);
 
   useEffect(() => {
     if (tab === 'stats') fetchStats(statsDays);
@@ -230,6 +258,7 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
         <div className="admin-panel__tabs">
           <button className={`admin-panel__tab ${tab === 'words' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('words')}>단어 관리</button>
           <button className={`admin-panel__tab ${tab === 'stats' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('stats')}>검색 통계</button>
+          <button className={`admin-panel__tab ${tab === 'users' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('users')}>사용자</button>
           {isSuperAdmin && (
             <button className={`admin-panel__tab ${tab === 'admins' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('admins')}>관리자</button>
           )}
@@ -294,6 +323,38 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
               </div>
             </div>
           ) : null}
+        </div>
+      )}
+
+      {tab === 'users' && (
+        <div className="admin-panel__users">
+          <div className="admin-panel__stats-header">
+            <span className="admin-panel__count">
+              총 가입자 <strong>{totalUsers}</strong>명
+            </span>
+            <button className="admin-panel__btn admin-panel__btn--text" onClick={fetchUsers}>
+              새로고침
+            </button>
+          </div>
+          {usersLoading ? (
+            <div className="admin-panel__loading">로딩 중...</div>
+          ) : allUsers.length === 0 ? (
+            <div className="admin-panel__empty">등록된 사용자가 없습니다</div>
+          ) : (
+            <div className="admin-panel__list">
+              {allUsers.map(u => (
+                <div key={u.id} className="admin-panel__word">
+                  <span className="admin-panel__word-text">
+                    {u.name}
+                    {u.isAdmin && <span className="admin-panel__badge">Admin</span>}
+                  </span>
+                  <span className="admin-panel__word-meta">
+                    {u.email} · {u.provider} · {new Date(u.createdAt).toLocaleDateString('ko-KR')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
