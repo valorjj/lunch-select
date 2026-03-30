@@ -24,7 +24,7 @@ export function LadderGame({ restaurants, onComplete }: LadderGameProps) {
   const doneRef = useRef(false);
 
   const columns = restaurants.length;
-  const rowCount = columns * APP_CONFIG.ladderRowMultiplier;
+  const rowCount = Math.max(columns * APP_CONFIG.ladderRowMultiplier, 10);
 
   const ladder = useMemo(
     () => generateLadder(columns, rowCount),

@@ -1,12 +1,15 @@
 import { Ladder, LadderRung, PathPoint } from '../../types/ladder';
 
-export function generateLadder(columns: number, rowCount: number): Ladder {
+export function generateLadder(columns: number, rawRowCount: number): Ladder {
+  // Ensure enough rows for a proper ladder — at least 10 rows
+  const rowCount = Math.max(rawRowCount, 10);
   const gaps = columns - 1;
   const rungs: LadderRung[] = [];
 
   // Target: each gap gets roughly equal number of rungs
-  // Aim for ~40% density overall, spread evenly across all gaps
-  const targetPerGap = Math.max(2, Math.floor(rowCount * 0.4));
+  // Higher density for fewer columns so the ladder looks full
+  const density = gaps <= 1 ? 0.6 : 0.4;
+  const targetPerGap = Math.max(4, Math.floor(rowCount * density));
 
   // Divide rows into zones of equal size, one zone per target rung per gap
   // This ensures rungs are vertically spread out, not clustered
