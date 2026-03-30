@@ -69,7 +69,6 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   const [menuModal, setMenuModal] = useState<{
     name: string;
     items: { name: string; price: number | null }[];
-    thumbnail: string;
     rating: number | null;
     reviewCount: number | null;
     loading: boolean;
@@ -127,7 +126,7 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   };
 
   const handleFetchMenu = async (r: RecommendResult) => {
-    setMenuModal({ name: r.name, items: [], thumbnail: '', rating: null, reviewCount: null, loading: true, error: null });
+    setMenuModal({ name: r.name, items: [], rating: null, reviewCount: null, loading: true, error: null });
     try {
       const apiUrl = `/api/place?name=${encodeURIComponent(r.name)}&address=${encodeURIComponent(r.roadAddress || r.address || '')}`;
       const res = await fetch(apiUrl);
@@ -136,14 +135,13 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
       setMenuModal({
         name: data.name || r.name,
         items: data.menuItems || [],
-        thumbnail: data.thumbnail || '',
         rating: data.rating ?? null,
         reviewCount: data.reviewCount ?? null,
         loading: false,
         error: data.menuItems?.length > 0 ? null : '\uB4F1\uB85D\uB41C \uBA54\uB274\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.',
       });
     } catch {
-      setMenuModal({ name: r.name, items: [], thumbnail: '', rating: null, reviewCount: null, loading: false, error: '\uBA54\uB274 \uC815\uBCF4\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.' });
+      setMenuModal({ name: r.name, items: [], rating: null, reviewCount: null, loading: false, error: '\uBA54\uB274 \uC815\uBCF4\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.' });
     }
   };
 
@@ -390,26 +388,17 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
                       </span>
                     )}
                   </div>
+                  <div className="recommend-tab__card-maps">
+                    <a className="recommend-tab__map-btn recommend-tab__map-btn--naver" href={`nmap://place?lat=${r.lat}&lng=${r.lng}&name=${encodeURIComponent(r.name)}&appname=com.lunchselect`} onClick={(e) => { setTimeout(() => { window.open(`https://map.naver.com/p/search/${encodeURIComponent(r.name)}`, '_blank'); }, 500); }}>N</a>
+                    <a className="recommend-tab__map-btn recommend-tab__map-btn--kakao" href={`kakaomap://look?p=${r.lat},${r.lng}`} onClick={(e) => { setTimeout(() => { window.open(`https://map.kakao.com/link/map/${encodeURIComponent(r.name)},${r.lat},${r.lng}`, '_blank'); }, 500); }}>K</a>
+                    <a className="recommend-tab__map-btn recommend-tab__map-btn--tmap" href={`tmap://route?goalx=${r.lng}&goaly=${r.lat}&goalname=${encodeURIComponent(r.name)}`}>T</a>
+                  </div>
                   <div className="recommend-tab__card-actions">
-                    <a
-                      className="recommend-tab__card-action"
-                      href={`https://map.kakao.com/link/map/${encodeURIComponent(r.name)},${r.lat},${r.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                      </svg>
-                      {'\uC9C0\uB3C4'}
-                    </a>
                     <button
                       className="recommend-tab__card-action"
                       onClick={() => handleFetchMenu(r)}
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 3h18v18H3z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
-                      </svg>
-                      {'\uBA54\uB274'}
+                      {'\uBA54\uB274 \uBCF4\uAE30'}
                     </button>
                     <button
                       className={`recommend-tab__card-action recommend-tab__card-action--primary ${isAdded ? 'recommend-tab__card-action--added' : ''}`}
@@ -462,11 +451,6 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
       {menuModal && (
         <div className="recommend-tab__modal-overlay" onClick={() => setMenuModal(null)}>
           <div className="recommend-tab__modal" onClick={(e) => e.stopPropagation()}>
-            {menuModal.thumbnail && (
-              <div className="recommend-tab__modal-thumb">
-                <img src={menuModal.thumbnail} alt="" />
-              </div>
-            )}
             <div className="recommend-tab__modal-header">
               <div>
                 <h3>{menuModal.name}</h3>

@@ -101,6 +101,67 @@
     }
   }
 
+  &__map-apps {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  &__map-apps-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  &__map-apps-btns {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__map-app {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.15s;
+
+    &:hover { opacity: 0.85; }
+
+    span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      font-size: 0.65rem;
+      font-weight: 800;
+    }
+
+    &--naver {
+      color: #1EC800;
+      span { background: #1EC800; color: #fff; }
+    }
+
+    &--kakao {
+      color: #3C1E1E;
+      span { background: #FEE500; color: #3C1E1E; }
+    }
+
+    &--tmap {
+      color: #EF4436;
+      span { background: #EF4436; color: #fff; }
+    }
+  }
+
   &__map-section {
     margin-bottom: 0.25rem;
     padding: 1rem 1.25rem;

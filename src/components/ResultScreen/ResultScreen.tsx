@@ -166,10 +166,27 @@ export function ResultScreen({
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map app buttons */}
+      {winner.lat && winner.lng && (
+        <div className="result-screen__map-apps">
+          <span className="result-screen__map-apps-label">지도 앱으로 보기</span>
+          <div className="result-screen__map-apps-btns">
+            <a className="result-screen__map-app result-screen__map-app--naver" href={`nmap://place?lat=${winner.lat}&lng=${winner.lng}&name=${encodeURIComponent(winner.name)}&appname=com.lunchselect`} onClick={() => { setTimeout(() => { window.open(`https://map.naver.com/p/search/${encodeURIComponent(winner.name)}`, '_blank'); }, 500); }}>
+              <span>N</span>네이버지도
+            </a>
+            <a className="result-screen__map-app result-screen__map-app--kakao" href={`kakaomap://look?p=${winner.lat},${winner.lng}`} onClick={() => { setTimeout(() => { window.open(`https://map.kakao.com/link/map/${encodeURIComponent(winner.name)},${winner.lat},${winner.lng}`, '_blank'); }, 500); }}>
+              <span>K</span>카카오맵
+            </a>
+            <a className="result-screen__map-app result-screen__map-app--tmap" href={`tmap://route?goalx=${winner.lng}&goaly=${winner.lat}&goalname=${encodeURIComponent(winner.name)}`}>
+              <span>T</span>티맵
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Embedded map */}
       {winner.lat && winner.lng && (
         <div className="result-screen__map-section">
-          <h4 className="result-screen__map-title">위치</h4>
           <KakaoMapView lat={winner.lat} lng={winner.lng} name={winner.name} />
         </div>
       )}
