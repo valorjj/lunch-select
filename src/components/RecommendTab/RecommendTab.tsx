@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SearchResult } from '../../types/restaurant';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { SUBWAY_LINES } from '../../data/subwayLines';
+import { REGION_GROUPS } from '../../data/regions';
 import './RecommendTab.scss';
 
 interface RecommendResult extends SearchResult {
@@ -19,34 +20,6 @@ interface PresetLocation {
   lat: number;
   lng: number;
 }
-
-const SEOUL_GU: PresetLocation[] = [
-  { name: '강남구', lat: 37.5172, lng: 127.0473 },
-  { name: '강동구', lat: 37.5301, lng: 127.1238 },
-  { name: '강북구', lat: 37.6396, lng: 127.0255 },
-  { name: '강서구', lat: 37.5510, lng: 126.8495 },
-  { name: '관악구', lat: 37.4784, lng: 126.9516 },
-  { name: '광진구', lat: 37.5385, lng: 127.0823 },
-  { name: '구로구', lat: 37.4954, lng: 126.8875 },
-  { name: '금천구', lat: 37.4569, lng: 126.8956 },
-  { name: '노원구', lat: 37.6542, lng: 127.0568 },
-  { name: '도봉구', lat: 37.6688, lng: 127.0472 },
-  { name: '동대문구', lat: 37.5744, lng: 127.0396 },
-  { name: '동작구', lat: 37.5124, lng: 126.9393 },
-  { name: '마포구', lat: 37.5663, lng: 126.9018 },
-  { name: '서대문구', lat: 37.5791, lng: 126.9368 },
-  { name: '서초구', lat: 37.4837, lng: 127.0324 },
-  { name: '성동구', lat: 37.5634, lng: 127.0370 },
-  { name: '성북구', lat: 37.5894, lng: 127.0167 },
-  { name: '송파구', lat: 37.5146, lng: 127.1060 },
-  { name: '양천구', lat: 37.5170, lng: 126.8665 },
-  { name: '영등포구', lat: 37.5264, lng: 126.8963 },
-  { name: '용산구', lat: 37.5324, lng: 126.9906 },
-  { name: '은평구', lat: 37.6027, lng: 126.9291 },
-  { name: '종로구', lat: 37.5735, lng: 126.9790 },
-  { name: '중구', lat: 37.5641, lng: 126.9979 },
-  { name: '중랑구', lat: 37.6066, lng: 127.0927 },
-];
 
 function formatDistance(meters: number): string {
   if (meters < 1000) return `${meters}m`;
@@ -70,6 +43,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
+  const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
   const activeLocation = locationMode === 'gps' ? gpsLocation : selectedPreset;
 
   const fetchRecommendations = useCallback(async (lat: number, lng: number, p: number) => {
@@ -176,17 +150,30 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
 
       {/* Gu preset chips */}
       {locationMode === 'gu' && (
-        <div className="recommend-tab__presets">
-          {SEOUL_GU.map((preset) => (
-            <button
-              key={preset.name}
-              className={`recommend-tab__preset ${selectedPreset?.name === preset.name ? 'recommend-tab__preset--active' : ''}`}
-              onClick={() => handlePresetSelect(preset)}
-            >
-              {preset.name}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="recommend-tab__region-tabs">
+            {REGION_GROUPS.map((rg) => (
+              <button
+                key={rg.label}
+                className={`recommend-tab__region-tab ${selectedRegion === rg.label ? 'recommend-tab__region-tab--active' : ''}`}
+                onClick={() => setSelectedRegion(rg.label)}
+              >
+                {rg.label}
+              </button>
+            ))}
+          </div>
+          <div className="recommend-tab__presets">
+            {REGION_GROUPS.find((rg) => rg.label === selectedRegion)?.areas.map((preset) => (
+              <button
+                key={preset.name}
+                className={`recommend-tab__preset ${selectedPreset?.name === preset.name ? 'recommend-tab__preset--active' : ''}`}
+                onClick={() => handlePresetSelect(preset)}
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Selected subway station chip */}

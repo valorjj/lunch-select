@@ -3,6 +3,7 @@ import { SearchResult } from '../types/restaurant';
 import { apiFetch } from '../utils/api';
 import { GlobalLoader } from './GlobalLoader/GlobalLoader';
 import { SUBWAY_LINES } from '../data/subwayLines';
+import { REGION_GROUPS } from '../data/regions';
 import './RestaurantSearch.scss';
 
 const SEARCH_API_BASE = '';
@@ -179,7 +180,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
   };
 
   const AREA_PRESETS = ['강남', '역삼', '서초', '홍대', '신촌', '이태원', '여의도', '종로', '잠실', '판교', '구로'];
-  const SEOUL_GU = ['강남구','강동구','강북구','강서구','관악구','광진구','구로구','금천구','노원구','도봉구','동대문구','동작구','마포구','서대문구','서초구','성동구','성북구','송파구','양천구','영등포구','용산구','은평구','종로구','중구','중랑구'];
+  const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
 
   const handleAreaModeChange = (mode: 'area' | 'gu' | 'subway') => {
     setAreaMode(mode);
@@ -255,19 +256,32 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
         </div>
       )}
 
-      {/* Gu chips */}
+      {/* Region tabs + area chips */}
       {areaMode === 'gu' && (
-        <div className="restaurant-search__areas">
-          {SEOUL_GU.map((gu) => (
-            <button
-              key={gu}
-              className={`restaurant-search__area ${areaPrefix === gu ? 'restaurant-search__area--active' : ''}`}
-              onClick={() => setAreaPrefix(areaPrefix === gu ? '' : gu)}
-            >
-              {gu}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="restaurant-search__region-tabs">
+            {REGION_GROUPS.map((rg) => (
+              <button
+                key={rg.label}
+                className={`restaurant-search__region-tab ${selectedRegion === rg.label ? 'restaurant-search__region-tab--active' : ''}`}
+                onClick={() => { setSelectedRegion(rg.label); setAreaPrefix(''); }}
+              >
+                {rg.label}
+              </button>
+            ))}
+          </div>
+          <div className="restaurant-search__areas">
+            {REGION_GROUPS.find((rg) => rg.label === selectedRegion)?.areas.map((a) => (
+              <button
+                key={a.name}
+                className={`restaurant-search__area ${areaPrefix === a.name ? 'restaurant-search__area--active' : ''}`}
+                onClick={() => setAreaPrefix(areaPrefix === a.name ? '' : a.name)}
+              >
+                {a.name}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Subway selected chip */}
