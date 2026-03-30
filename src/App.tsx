@@ -17,6 +17,7 @@ import { VisitorCounter } from './components/VisitorCounter/VisitorCounter';
 import { AdminPanel } from './components/AdminPanel/AdminPanel';
 import { ArchitectureModal } from './components/ArchitectureModal/ArchitectureModal';
 import { useTheme } from './hooks/useTheme';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { decodeSharedResult } from './components/SharePanel/SharePanel';
 import './App.scss';
 
@@ -31,6 +32,7 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showArch, setShowArch] = useState(false);
   const { theme, toggle: toggleTheme } = useTheme();
+  const isOnline = useOnlineStatus();
   const [gameType, setGameType] = useState<GameType>('gacha');
 
   // Check for shared result in URL
@@ -131,6 +133,13 @@ function App() {
 
       <main className="app__content">
 
+        {!isOnline && (
+          <div className="app__offline-banner">
+            <span>&#x26A0;&#xFE0F; 오프라인 상태입니다</span>
+            <span className="app__offline-hint">즐겨찾기와 저장된 목록으로 게임을 할 수 있어요</span>
+          </div>
+        )}
+
         <CategoryTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
         {isGame && (
@@ -143,14 +152,15 @@ function App() {
           <div className="fade-in">
             <RestaurantSearch
               onSelect={store.addFromSearch}
-              disabled={store.isLoading}
-              placeholder={searchPlaceholder}
+              disabled={store.isLoading || !isOnline}
+              placeholder={isOnline ? searchPlaceholder : '오프라인 - 즐겨찾기에서 추가하세요'}
             />
             {store.error && <p className="app__error">{store.error}</p>}
             <BookmarkSection
               bookmarks={bookmarks}
               onAddToList={store.addFromSearch}
               existingIds={new Set(store.restaurants.map(r => r.id))}
+              defaultExpanded={!isOnline}
             />
             <RestaurantList
               restaurants={store.restaurants}

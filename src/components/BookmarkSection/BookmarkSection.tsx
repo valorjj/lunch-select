@@ -6,10 +6,11 @@ interface BookmarkSectionProps {
   bookmarks: Restaurant[];
   onAddToList: (result: SearchResult) => void;
   existingIds: Set<string>;
+  defaultExpanded?: boolean;
 }
 
-export function BookmarkSection({ bookmarks, onAddToList, existingIds }: BookmarkSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function BookmarkSection({ bookmarks, onAddToList, existingIds, defaultExpanded }: BookmarkSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded || false);
 
   if (bookmarks.length === 0) return null;
 
