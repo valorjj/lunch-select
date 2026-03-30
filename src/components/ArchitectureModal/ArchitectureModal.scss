@@ -156,6 +156,48 @@
     }
   }
 
+  // Highlights row
+  &__highlights {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__highlight {
+    flex: 1;
+    min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 0.5rem;
+    background: rgba(var(--color-primary-rgb), 0.06);
+    border-radius: 10px;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+  }
+
+  &__highlight-num {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    line-height: 1;
+  }
+
+  &__highlight-label {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+    text-align: center;
+  }
+
+  // Sub-sub headings
+  h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0.75rem 0 0.35rem;
+  }
+
   // Mermaid charts
   &__mermaid {
     display: flex;
@@ -171,13 +213,17 @@
 
   // Footer
   &__footer {
+    text-align: center;
+    padding: 2rem 0 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  &__footer-links {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    padding: 2rem 0 1rem;
-    border-top: 1px solid var(--color-border);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
 
     a {
       color: var(--color-text-muted);
@@ -192,6 +238,12 @@
     span {
       color: var(--color-border);
     }
+  }
+
+  &__footer-note {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
   }
 }
 
