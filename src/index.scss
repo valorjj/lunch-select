@@ -14,6 +14,22 @@
   --color-success-rgb: 56, 161, 105;
 }
 
+[data-theme='dark'] {
+  --color-primary: #FF8F5E;
+  --color-primary-rgb: 255, 143, 94;
+  --color-primary-dark: #FF6B35;
+  --color-accent: #FFB088;
+  --color-background: #121218;
+  --color-surface: #1C1C26;
+  --color-text: #E8E8ED;
+  --color-text-muted: #8B8BA3;
+  --color-border: #2E2E3A;
+  --color-error: #FC8181;
+  --color-error-rgb: 252, 129, 129;
+  --color-success: #68D391;
+  --color-success-rgb: 104, 211, 145;
+}
+
 *,
 *::before,
 *::after {

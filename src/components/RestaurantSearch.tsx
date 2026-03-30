@@ -6,6 +6,27 @@ import './RestaurantSearch.scss';
 
 const SEARCH_API_BASE = '';
 const PAGE_SIZE = 20;
+const HISTORY_KEY = 'lunch-select-search-history';
+const MAX_HISTORY = 10;
+
+function loadHistory(): string[] {
+  try {
+    const saved = localStorage.getItem(HISTORY_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch { return []; }
+}
+
+function saveHistory(history: string[]) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+  } catch { /* ignore */ }
+}
+
+function addToHistory(query: string) {
+  const history = loadHistory().filter((h) => h !== query);
+  history.unshift(query);
+  saveHistory(history);
+}
 
 type ViewMode = 'list' | 'card';
 
@@ -35,6 +56,8 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [searchedQuery, setSearchedQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [history, setHistory] = useState<string[]>(loadHistory);
+  const [showHistory, setShowHistory] = useState(false);
 
   const fetchPage = useCallback(async (searchQuery: string, page: number) => {
     const response = await fetch(
@@ -62,8 +85,11 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
       setTotalPages(data.totalPages);
       setCurrentPage(1);
       setShowResults(true);
+      setShowHistory(false);
       setHasSearched(true);
       setSearchedQuery(trimmed);
+      addToHistory(trimmed);
+      setHistory(loadHistory());
       // Log search for statistics (fire and forget)
       const parts = trimmed.split(/\s+/);
       const region = parts.length > 1 ? parts[0] : null;
@@ -114,6 +140,39 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
     setHasSearched(false);
   };
 
+  const handleHistorySelect = (item: string) => {
+    setQuery(item);
+    setShowHistory(false);
+    // Trigger search immediately
+    const trimmed = item.trim();
+    setIsSearching(true);
+    setError(null);
+    setAddedIds(new Set());
+    fetchPage(trimmed, 1).then((data) => {
+      setResults(data.results);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setCurrentPage(1);
+      setShowResults(true);
+      setHasSearched(true);
+      setSearchedQuery(trimmed);
+      addToHistory(trimmed);
+      setHistory(loadHistory());
+    }).catch(() => {
+      setError('검색 중 오류가 발생했습니다.');
+      setResults([]);
+      setShowResults(true);
+      setHasSearched(true);
+    }).finally(() => setIsSearching(false));
+  };
+
+  const handleHistoryDelete = (e: React.MouseEvent, item: string) => {
+    e.stopPropagation();
+    const updated = history.filter((h) => h !== item);
+    saveHistory(updated);
+    setHistory(updated);
+  };
+
   return (
     <div className="restaurant-search">
       <GlobalLoader visible={isSearching} message="맛집 검색 중..." />
@@ -123,7 +182,9 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
           className="restaurant-search__field"
           placeholder={placeholder || "음식점 이름으로 검색하세요 (예: 역삼 김치찌개)"}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setShowHistory(false); }}
+          onFocus={() => { if (!showResults && history.length > 0) setShowHistory(true); }}
+          onBlur={() => { setTimeout(() => setShowHistory(false), 200); }}
           disabled={disabled || isSearching}
         />
         <button
@@ -134,6 +195,29 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
           {isSearching ? <span className="restaurant-search__spinner" /> : '검색'}
         </button>
       </form>
+
+      {showHistory && history.length > 0 && (
+        <div className="restaurant-search__history">
+          <div className="restaurant-search__history-header">
+            <span>최근 검색</span>
+          </div>
+          {history.map((item) => (
+            <button
+              key={item}
+              className="restaurant-search__history-item"
+              onMouseDown={() => handleHistorySelect(item)}
+            >
+              <span className="restaurant-search__history-text">{item}</span>
+              <span
+                className="restaurant-search__history-delete"
+                onMouseDown={(e) => handleHistoryDelete(e, item)}
+              >
+                &times;
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {showResults && (
         <div className="restaurant-search__panel">
