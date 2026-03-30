@@ -66,7 +66,15 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
-  const [menuModal, setMenuModal] = useState<{ name: string; items: { name: string; price: number | null }[]; loading: boolean; error: string | null } | null>(null);
+  const [menuModal, setMenuModal] = useState<{
+    name: string;
+    items: { name: string; price: number | null }[];
+    thumbnail: string;
+    rating: number | null;
+    reviewCount: number | null;
+    loading: boolean;
+    error: string | null;
+  } | null>(null);
   const activeLocation = locationMode === 'gps' ? gpsLocation : selectedPreset;
 
   // Extract cuisine type from Kakao category string (e.g., "음식점 > 한식 > 찌개" → "한식")
@@ -119,19 +127,23 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   };
 
   const handleFetchMenu = async (r: RecommendResult) => {
-    setMenuModal({ name: r.name, items: [], loading: true, error: null });
+    setMenuModal({ name: r.name, items: [], thumbnail: '', rating: null, reviewCount: null, loading: true, error: null });
     try {
       const apiUrl = `/api/place?name=${encodeURIComponent(r.name)}&address=${encodeURIComponent(r.roadAddress || r.address || '')}`;
       const res = await fetch(apiUrl);
       if (!res.ok) throw new Error();
       const data = await res.json();
-      if (data.menuItems?.length > 0) {
-        setMenuModal({ name: r.name, items: data.menuItems, loading: false, error: null });
-      } else {
-        setMenuModal({ name: r.name, items: [], loading: false, error: '\uB4F1\uB85D\uB41C \uBA54\uB274\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.' });
-      }
+      setMenuModal({
+        name: data.name || r.name,
+        items: data.menuItems || [],
+        thumbnail: data.thumbnail || '',
+        rating: data.rating ?? null,
+        reviewCount: data.reviewCount ?? null,
+        loading: false,
+        error: data.menuItems?.length > 0 ? null : '\uB4F1\uB85D\uB41C \uBA54\uB274\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.',
+      });
     } catch {
-      setMenuModal({ name: r.name, items: [], loading: false, error: '\uBA54\uB274 \uC815\uBCF4\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.' });
+      setMenuModal({ name: r.name, items: [], thumbnail: '', rating: null, reviewCount: null, loading: false, error: '\uBA54\uB274 \uC815\uBCF4\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.' });
     }
   };
 
@@ -450,8 +462,26 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
       {menuModal && (
         <div className="recommend-tab__modal-overlay" onClick={() => setMenuModal(null)}>
           <div className="recommend-tab__modal" onClick={(e) => e.stopPropagation()}>
+            {menuModal.thumbnail && (
+              <div className="recommend-tab__modal-thumb">
+                <img src={menuModal.thumbnail} alt="" />
+              </div>
+            )}
             <div className="recommend-tab__modal-header">
-              <h3>{menuModal.name}</h3>
+              <div>
+                <h3>{menuModal.name}</h3>
+                {menuModal.rating !== null && menuModal.rating > 0 && (
+                  <div className="recommend-tab__modal-rating">
+                    <span className="recommend-tab__modal-star">{'\u2605'}</span>
+                    <span className="recommend-tab__modal-score">{menuModal.rating.toFixed(2)}</span>
+                    {menuModal.reviewCount !== null && (
+                      <span className="recommend-tab__modal-reviews">
+                        ({'\uB9AC\uBDF0'} {menuModal.reviewCount.toLocaleString()})
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               <button onClick={() => setMenuModal(null)}>&times;</button>
             </div>
             {menuModal.loading && (
@@ -460,7 +490,7 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
                 <span>{'\uBA54\uB274\uB97C \uBD88\uB7EC\uC624\uB294 \uC911...'}</span>
               </div>
             )}
-            {menuModal.error && (
+            {menuModal.error && !menuModal.loading && (
               <div className="recommend-tab__modal-error">{menuModal.error}</div>
             )}
             {menuModal.items.length > 0 && (

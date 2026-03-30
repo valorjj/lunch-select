@@ -452,33 +452,72 @@
     border-radius: 16px;
     max-width: 420px;
     width: 100%;
-    max-height: 70vh;
+    max-height: 80vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   }
 
+  &__modal-thumb {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    border-radius: 16px 16px 0 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
   &__modal-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    padding: 1rem 1.25rem;
+    padding: 1rem 1.25rem 0.75rem;
     border-bottom: 1px solid var(--color-border);
 
     h3 {
       margin: 0;
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       color: var(--color-text);
     }
 
     button {
+      flex-shrink: 0;
       background: none;
       border: none;
       font-size: 1.4rem;
       color: var(--color-text-muted);
       cursor: pointer;
+      margin-top: -0.25rem;
       &:hover { color: var(--color-text); }
     }
+  }
+
+  &__modal-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+    margin-bottom: 0.4rem;
+  }
+
+  &__modal-star {
+    color: #FFBA08;
+    font-size: 0.9rem;
+  }
+
+  &__modal-score {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  &__modal-reviews {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
   }
 
   &__modal-loading {

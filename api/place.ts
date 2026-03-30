@@ -11,6 +11,8 @@ interface NaverPlaceData {
   lat: number;
   lng: number;
   phone: string;
+  rating: number | null;
+  reviewCount: number | null;
 }
 
 // In-memory caches
@@ -132,6 +134,8 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
           phone
           virtualPhone
           coordinate { x y }
+          visitorReviewsScore
+          visitorReviewsTotal
         }
       }
     }`,
@@ -226,6 +230,8 @@ async function fetchPlaceData(placeId: string): Promise<NaverPlaceData> {
     lat: Number(coord.y) || 0,
     lng: Number(coord.x) || 0,
     phone: base.virtualPhone || base.phone || '',
+    rating: base.visitorReviewsScore ? parseFloat(base.visitorReviewsScore) : null,
+    reviewCount: base.visitorReviewsTotal ? parseInt(base.visitorReviewsTotal) : null,
   };
 }
 
