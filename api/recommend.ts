@@ -14,25 +14,48 @@ interface RecommendResult {
   source: 'kakao';
 }
 
-// Shift coordinates by a random offset (50~150m) to get different results each search
-function jitterCoords(lat: number, lng: number): { lat: number; lng: number } {
-  // ~0.001 degree ≈ 111m at Seoul's latitude
-  const offsetLat = (Math.random() - 0.5) * 0.003; // ±150m
-  const offsetLng = (Math.random() - 0.5) * 0.003;
-  return { lat: lat + offsetLat, lng: lng + offsetLng };
+// Haversine distance in meters
+function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Generate grid of sub-centers to overcome Kakao's 45-result cap
+// For a 1km radius: 4 sub-cells of 600m radius each (overlapping to ensure coverage)
+function generateGridCenters(lat: number, lng: number, radiusM: number): { lat: number; lng: number; radius: number }[] {
+  // For small radius, single query is enough
+  if (radiusM <= 500) {
+    return [{ lat, lng, radius: radiusM }];
+  }
+
+  const subRadius = Math.ceil(radiusM * 0.65); // overlap ensures full coverage
+  // ~0.001 degree ≈ 111m latitude, ~89m longitude at Seoul (37.5°N)
+  const offsetLat = (radiusM * 0.45) / 111000;
+  const offsetLng = (radiusM * 0.45) / 89000;
+
+  // Add small random jitter to each center for variety on repeated searches
+  const jitter = () => (Math.random() - 0.5) * 0.001;
+
+  return [
+    { lat: lat + offsetLat + jitter(), lng: lng + offsetLng + jitter(), radius: subRadius },
+    { lat: lat + offsetLat + jitter(), lng: lng - offsetLng + jitter(), radius: subRadius },
+    { lat: lat - offsetLat + jitter(), lng: lng + offsetLng + jitter(), radius: subRadius },
+    { lat: lat - offsetLat + jitter(), lng: lng - offsetLng + jitter(), radius: subRadius },
+  ];
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const rawLat = parseFloat(req.query.lat as string);
-  const rawLng = parseFloat(req.query.lng as string);
+  const lat = parseFloat(req.query.lat as string);
+  const lng = parseFloat(req.query.lng as string);
   const radius = Math.min(3000, Math.max(100, parseInt(req.query.radius as string) || 1000));
 
-  if (isNaN(rawLat) || isNaN(rawLng)) {
+  if (isNaN(lat) || isNaN(lng)) {
     return res.status(400).json({ error: 'lat, lng 파라미터가 필요합니다.' });
   }
-
-  // Jitter coordinates slightly for variety on repeated searches
-  const { lat, lng } = jitterCoords(rawLat, rawLng);
 
   const kakaoRestKey = process.env.KAKAO_REST_API_KEY;
   const kakaoAdminKey = process.env.KAKAO_ADMIN_KEY;
@@ -46,26 +69,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const excludeKeywords = ['노래방', '노래연습', '코인노래', '룸카페', 'PC방', '피씨방'];
     const excludeCategories = ['술집', '호프', '요리주점', '일본식주점', '바(BAR)'];
 
-    const fetchPage = async (p: number) => {
-      const url = `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=FD6&x=${lng}&y=${lat}&radius=${radius}&sort=distance&size=15&page=${p}`;
-      const response = await fetch(url, { headers: { Authorization: authHeader } });
-      if (!response.ok) throw new Error(`Kakao API error ${response.status}`);
-      return response.json();
+    const fetchAllPages = async (centerLat: number, centerLng: number, r: number) => {
+      const fetchPage = async (p: number) => {
+        const url = `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=FD6&x=${centerLng}&y=${centerLat}&radius=${r}&sort=distance&size=15&page=${p}`;
+        const response = await fetch(url, { headers: { Authorization: authHeader } });
+        if (!response.ok) throw new Error(`Kakao API error ${response.status}`);
+        return response.json();
+      };
+
+      const firstData = await fetchPage(1);
+      const meta = firstData.meta || {};
+      const pageCount = Math.min(Math.ceil((meta.pageable_count || 0) / 15), 3);
+      let docs = [...(firstData.documents || [])];
+
+      if (pageCount > 1) {
+        const rest = await Promise.all(
+          Array.from({ length: pageCount - 1 }, (_, i) => fetchPage(i + 2))
+        );
+        for (const r of rest) docs = docs.concat(r.documents || []);
+      }
+      return docs;
     };
 
-    // Fetch page 1 first to get total count
-    const firstData = await fetchPage(1);
-    const meta = firstData.meta || {};
-    const total = meta.pageable_count || 0;
-    const totalPages = Math.min(Math.ceil(total / 15), 3); // Kakao caps at 45 results
+    // Grid subdivision: query multiple sub-centers in parallel
+    const gridCenters = generateGridCenters(lat, lng, radius);
+    const allGridResults = await Promise.all(
+      gridCenters.map((c) => fetchAllPages(c.lat, c.lng, c.radius))
+    );
 
-    // Fetch remaining pages in parallel
-    let allDocuments = [...(firstData.documents || [])];
-    if (totalPages > 1) {
-      const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-      const pageResults = await Promise.all(remainingPages.map(fetchPage));
-      for (const pr of pageResults) {
-        allDocuments = allDocuments.concat(pr.documents || []);
+    // Deduplicate by place ID
+    const seen = new Set<string>();
+    let allDocuments: any[] = [];
+    for (const docs of allGridResults) {
+      for (const doc of docs) {
+        const id = doc.id || doc.place_name;
+        if (!seen.has(id)) {
+          seen.add(id);
+          allDocuments.push(doc);
+        }
       }
     }
 
@@ -78,18 +119,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (excludeCategories.some((ec) => cat.includes(ec))) return false;
         return true;
       })
-      .map((item: any) => ({
-        id: item.id || '',
-        name: item.place_name || '',
-        category: item.category_name || '',
-        address: item.address_name || '',
-        roadAddress: item.road_address_name || '',
-        lat: parseFloat(item.y) || 0,
-        lng: parseFloat(item.x) || 0,
-        phone: item.phone || '',
-        distance: parseInt(item.distance) || 0,
-        source: 'kakao' as const,
-      }));
+      .map((item: any) => {
+        const pLat = parseFloat(item.y) || 0;
+        const pLng = parseFloat(item.x) || 0;
+        return {
+          id: item.id || '',
+          name: item.place_name || '',
+          category: item.category_name || '',
+          address: item.address_name || '',
+          roadAddress: item.road_address_name || '',
+          lat: pLat,
+          lng: pLng,
+          phone: item.phone || '',
+          // Recalculate distance from original center (not sub-center)
+          distance: Math.round(haversineM(lat, lng, pLat, pLng)),
+          source: 'kakao' as const,
+        };
+      })
+      .filter((r) => r.distance <= radius) // Only keep results within the requested radius
+      .sort((a, b) => a.distance - b.distance);
 
     // Enrich with thumbnails (best-effort)
     const enriched = await enrichWithThumbnails(results);
