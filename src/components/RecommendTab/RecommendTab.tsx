@@ -42,9 +42,26 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
   const activeLocation = locationMode === 'gps' ? gpsLocation : selectedPreset;
+
+  // Extract cuisine type from Kakao category string (e.g., "음식점 > 한식 > 찌개" → "한식")
+  const getCuisine = (cat: string) => {
+    const parts = cat.split('>').map((s) => s.trim());
+    return parts[1] || parts[0] || '';
+  };
+
+  // Unique cuisine types from current results
+  const cuisineTypes = results.length > 0
+    ? Array.from(new Set(results.map((r) => getCuisine(r.category)).filter(Boolean))).sort()
+    : [];
+
+  // Filtered results
+  const filteredResults = categoryFilter
+    ? results.filter((r) => getCuisine(r.category) === categoryFilter)
+    : results;
 
   const fetchRecommendations = useCallback(async (lat: number, lng: number, p: number) => {
     setIsLoading(true);
@@ -56,6 +73,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
       setResults(data.results || []);
       setTotalPages(data.totalPages || 0);
       setPage(p);
+      setCategoryFilter(null);
     } catch {
       setError('\uC8FC\uBCC0 \uC74C\uC2DD\uC810\uC744 \uBD88\uB7EC\uC624\uB294 \uB370 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
       setResults([]);
@@ -261,14 +279,36 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
         <div className="recommend-tab__error">{error}</div>
       )}
 
+      {/* Category filter chips */}
+      {!isLoading && !geoLoading && cuisineTypes.length > 1 && (
+        <div className="recommend-tab__cuisines">
+          <button
+            className={`recommend-tab__cuisine ${!categoryFilter ? 'recommend-tab__cuisine--active' : ''}`}
+            onClick={() => setCategoryFilter(null)}
+          >
+            {'\uC804\uCCB4'}
+          </button>
+          {cuisineTypes.map((c) => (
+            <button
+              key={c}
+              className={`recommend-tab__cuisine ${categoryFilter === c ? 'recommend-tab__cuisine--active' : ''}`}
+              onClick={() => setCategoryFilter(categoryFilter === c ? null : c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Results grid */}
-      {!isLoading && !geoLoading && results.length > 0 && (
+      {!isLoading && !geoLoading && filteredResults.length > 0 && (
         <>
           <div className="recommend-tab__count">
-            {'\uC8FC\uBCC0 \uC74C\uC2DD\uC810 '}<strong>{results.length}</strong>{'\uACF3'}
+            {'\uC8FC\uBCC0 \uC74C\uC2DD\uC810 '}<strong>{filteredResults.length}</strong>{'\uACF3'}
+            {categoryFilter && <span className="recommend-tab__count-filter"> ({categoryFilter})</span>}
           </div>
           <div className="recommend-tab__grid">
-            {results.map((r) => {
+            {filteredResults.map((r) => {
               const isAdded = addedIds.has(r.id);
               return (
                 <div key={r.id} className="recommend-tab__card">
