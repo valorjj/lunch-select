@@ -387,57 +387,48 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
             <div className={`restaurant-search__results restaurant-search__results--${viewMode}`}>
               {results.map((result) => {
                 const isAdded = addedIds.has(result.id) || (existingIds?.has(result.id) ?? false);
+                const categoryParts = (result.category || '').split('>').map((s: string) => s.trim());
+                const cuisine = categoryParts.length > 1 ? categoryParts[1] || categoryParts[0] : categoryParts[0];
+                const detail = categoryParts.length > 2 ? categoryParts[categoryParts.length - 1] : '';
                 return viewMode === 'list' ? (
                   <div key={result.id} className="restaurant-search__item">
-                    {result.imageUrl && (
-                      <div className="restaurant-search__item-thumb">
-                        <img src={result.imageUrl} alt="" loading="lazy" />
-                      </div>
-                    )}
                     <div className="restaurant-search__item-body">
                       <div className="restaurant-search__item-name">{result.name}</div>
-                      <div className="restaurant-search__item-meta">
-                        {result.category && (
-                          <span className="restaurant-search__item-category">{result.category}</span>
-                        )}
-                        <span className="restaurant-search__item-address">
-                          {result.roadAddress || result.address}
-                        </span>
+                      <div className="restaurant-search__item-badges">
+                        {cuisine && <span className="restaurant-search__badge restaurant-search__badge--cuisine">{cuisine}</span>}
+                        {detail && <span className="restaurant-search__badge restaurant-search__badge--detail">{detail}</span>}
                       </div>
+                      <span className="restaurant-search__item-address">
+                        {result.roadAddress || result.address}
+                      </span>
                     </div>
                     <button
                       className={`restaurant-search__item-add ${isAdded ? 'restaurant-search__item-add--added' : ''}`}
                       onClick={() => handleSelect(result)}
                       disabled={isAdded}
                     >
-                      {isAdded ? '✓' : '+'}
+                      {isAdded ? '\u2713' : '+'}
                     </button>
                   </div>
                 ) : (
                   <div key={result.id} className="restaurant-search__card">
-                    {result.imageUrl && (
-                      <div className="restaurant-search__card-thumb">
-                        <img src={result.imageUrl} alt="" loading="lazy" />
-                      </div>
-                    )}
                     <div className="restaurant-search__card-body">
                       <div className="restaurant-search__card-name">{result.name}</div>
-                      {result.category && (
-                        <span className="restaurant-search__card-category">{result.category}</span>
-                      )}
+                      <div className="restaurant-search__card-badges">
+                        {cuisine && <span className="restaurant-search__badge restaurant-search__badge--cuisine">{cuisine}</span>}
+                        {detail && <span className="restaurant-search__badge restaurant-search__badge--detail">{detail}</span>}
+                        {result.phone && <span className="restaurant-search__badge restaurant-search__badge--phone">{result.phone}</span>}
+                      </div>
                       <div className="restaurant-search__card-address">
                         {result.roadAddress || result.address}
                       </div>
-                      {result.phone && (
-                        <div className="restaurant-search__card-phone">{result.phone}</div>
-                      )}
                     </div>
                     <button
                       className={`restaurant-search__card-add ${isAdded ? 'restaurant-search__card-add--added' : ''}`}
                       onClick={() => handleSelect(result)}
                       disabled={isAdded}
                     >
-                      {isAdded ? '추가됨' : '+ 추가'}
+                      {isAdded ? '\uCD94\uAC00\uB428' : '+ \uCD94\uAC00'}
                     </button>
                   </div>
                 );
