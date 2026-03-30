@@ -172,6 +172,58 @@ const AUTH_FLOW = `sequenceDiagram
     B->>F: User info + isAdmin
 `;
 
+const RECOMMEND_FLOW = `flowchart TD
+    A["User selects location mode"] --> B{"Mode?"}
+    B -->|"GPS"| C["Browser Geolocation\\n5-min cache"]
+    B -->|"시/구 선택"| D["Region tabs:\\n서울 / 경기남부 / 경기북부\\n→ pick district/city"]
+    B -->|"지하철역"| E["Subway Modal\\n412 stations, 12 lines\\nwith search"]
+
+    C --> F["Set coordinates"]
+    D --> F
+    E --> F
+
+    F --> G["Budget slider\\n5,000~50,000원"]
+    G --> H["Click 맛집 검색"]
+    H --> I["Kakao Category API\\nFD6=음식점, 1km radius\\nsort by distance"]
+    I --> J["Filter: remove\\n노래방, 술집, PC방"]
+    J --> K["Enrich thumbnails"]
+
+    K --> K1["1st: Kakao og:image\\n(exact place ID)"]
+    K --> K2["2nd: Naver GraphQL\\n(name + 동 area)"]
+
+    K1 --> L["Display cards\\nwith distance badge"]
+    K2 --> L
+    L --> M["+ 게임에 추가\\n→ restaurant list"]
+
+    style A fill:#FFF0E8,stroke:#FF6B35
+    style L fill:#E8F5E9,stroke:#38A169
+    style M fill:#E3F2FD,stroke:#1976D2
+    style J fill:#FFF8E1,stroke:#F9A825
+`;
+
+const LOCATION_SYSTEM = `flowchart LR
+    subgraph Search ["Search Tab"]
+      S1["⚡ 인기 지역\\n강남, 역삼, 판교..."]
+      S2["🔲 시/구 선택\\n서울 25구 + 경기 27시"]
+      S3["🚇 지하철역\\n412 stations"]
+    end
+
+    subgraph Recommend ["Recommend Tab"]
+      R1["📍 현재 위치\\nBrowser GPS"]
+      R2["🔲 시/구 선택\\nSame region data"]
+      R3["🚇 지하철역\\nSame subway modal"]
+    end
+
+    S2 --- R2
+    S3 --- R3
+    DB["Shared Data\\nregions.ts\\nsubwayLines.ts"] --- S2
+    DB --- S3
+    DB --- R2
+    DB --- R3
+
+    style DB fill:#FFF8E1,stroke:#F9A825
+`;
+
 const DARK_MODE_FLOW = `flowchart LR
     A["App mounts"] --> B{"localStorage\\ntheme saved?"}
     B -->|"Yes"| C["Use saved theme"]
@@ -233,12 +285,12 @@ export function ArchitectureModal({ onClose }: Props) {
               <span className="arch__highlight-label">REST Controllers</span>
             </div>
             <div className="arch__highlight">
-              <span className="arch__highlight-num">5</span>
+              <span className="arch__highlight-num">6</span>
               <span className="arch__highlight-label">Serverless Functions</span>
             </div>
             <div className="arch__highlight">
-              <span className="arch__highlight-num">2</span>
-              <span className="arch__highlight-label">OAuth Providers</span>
+              <span className="arch__highlight-num">412</span>
+              <span className="arch__highlight-label">Subway Stations</span>
             </div>
           </div>
         </section>
@@ -312,16 +364,21 @@ export function ArchitectureModal({ onClose }: Props) {
               <tr><th>Feature</th><th>Implementation</th><th>Storage</th></tr>
             </thead>
             <tbody>
-              <tr><td>Restaurant search</td><td>3-tier API fallback with thumbnails</td><td>-</td></tr>
+              <tr><td>Restaurant search</td><td>3-tier API fallback with thumbnails, 3-mode area selector</td><td>-</td></tr>
+              <tr><td>Area selection</td><td>인기 지역 presets / 시·구 (서울+경기) / 지하철역 (412 stations, 12 lines)</td><td>-</td></tr>
+              <tr><td>Recommendation</td><td>GPS or area-based nearby restaurants via Kakao category search</td><td>-</td></tr>
+              <tr><td>Budget filter</td><td>5,000~50,000원 slider for recommendations</td><td>-</td></tr>
+              <tr><td>Thumbnail enrichment</td><td>Kakao og:image (primary) + Naver GraphQL imageUrl (fallback)</td><td>-</td></tr>
               <tr><td>Search history</td><td>Last 10 queries, click to re-search</td><td>localStorage</td></tr>
               <tr><td>Restaurant list</td><td>Add/remove with background menu fetch</td><td>localStorage</td></tr>
-              <tr><td>Bookmarks</td><td>Star toggle, requires login</td><td>Backend DB</td></tr>
+              <tr><td>Bookmarks</td><td>Star toggle, localStorage for all users</td><td>localStorage</td></tr>
               <tr><td>Gacha game</td><td>CSS animation capsule machine</td><td>-</td></tr>
               <tr><td>Ladder game</td><td>SVG + requestAnimationFrame path tracing</td><td>-</td></tr>
               <tr><td>Word game (꼬들)</td><td>Wordle-like with Korean jamo decomposition</td><td>-</td></tr>
-              <tr><td>Menu display</td><td>Naver GraphQL (baemin + base menus)</td><td>-</td></tr>
+              <tr><td>Menu display</td><td>Naver GraphQL (baemin 80+ items / base ~7 items)</td><td>-</td></tr>
               <tr><td>Result sharing</td><td>Base64-encoded URL with restaurant data</td><td>URL param</td></tr>
               <tr><td>Dark mode</td><td>CSS variable swap + system preference detection</td><td>localStorage</td></tr>
+              <tr><td>Offline mode</td><td>Offline banner, search disabled, bookmarks auto-expand</td><td>-</td></tr>
               <tr><td>Visitor counter</td><td>TODAY + TOTAL count from backend</td><td>Backend DB</td></tr>
               <tr><td>Admin panel</td><td>Word management, search stats, user management</td><td>Backend DB</td></tr>
             </tbody>
@@ -403,6 +460,7 @@ export function ArchitectureModal({ onClose }: Props) {
               <tr><td><code>/api/place?id=</code></td><td>GET</td><td>Place detail + menu by Naver Place ID</td><td>Naver GraphQL (3 parallel queries)</td><td>24h in-memory</td></tr>
               <tr><td><code>/api/place?name=&amp;address=</code></td><td>GET</td><td>Cross-ref Kakao restaurant to Naver, then fetch menu</td><td>Naver GraphQL (restaurantList + placeDetail)</td><td>24h cross-ref + place</td></tr>
               <tr><td><code>/api/place?url=</code></td><td>GET</td><td>Resolve Naver Map URL to place data</td><td>Naver GraphQL</td><td>24h in-memory</td></tr>
+              <tr><td><code>/api/recommend</code></td><td>GET</td><td>Nearby restaurants by GPS/area coordinates</td><td>Kakao Category (FD6) + Kakao og:image + Naver GraphQL</td><td>-</td></tr>
               <tr><td><code>/api/directions</code></td><td>GET</td><td>Driving route between two coordinates</td><td>Naver Directions API (NCP)</td><td>-</td></tr>
               <tr><td><code>/api/geocode</code></td><td>GET</td><td>Address to lat/lng coordinates</td><td>Naver Geocoding API (NCP)</td><td>-</td></tr>
             </tbody>
@@ -434,6 +492,84 @@ export function ArchitectureModal({ onClose }: Props) {
               <tr><td><code>/api/game-words</code></td><td>GET</td><td>-</td><td>Public word list for Word Game</td></tr>
               <tr><td><code>/api/admin/words</code></td><td>Various</td><td>Admin</td><td>CRUD game words</td></tr>
               <tr><td><code>/api/admin/users</code></td><td>Various</td><td>Super Admin</td><td>User management</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        {/* Location Selection System */}
+        <section className="arch__section">
+          <h2>Location Selection System</h2>
+          <p className="arch__desc">
+            Both search and recommendation tabs share the same 3-mode location selector pattern.
+            Region data (서울 25구, 경기남부 17시, 경기북부 10시) and subway station data (412 stations
+            across 12 lines) are stored in shared TypeScript files and reused across components.
+          </p>
+          <MermaidChart chart={LOCATION_SYSTEM} id="location-system" />
+          <h3>Subway Station Data</h3>
+          <table className="arch__table arch__table--full">
+            <thead>
+              <tr><th>Line</th><th>Stations</th><th>Color</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1호선</td><td>36 stations (도봉산~인천)</td><td><code>#0052A4</code></td></tr>
+              <tr><td>2호선</td><td>52 stations (시청~성수 순환)</td><td><code>#009B3E</code></td></tr>
+              <tr><td>3호선</td><td>33 stations (대화~오금)</td><td><code>#EF7C1C</code></td></tr>
+              <tr><td>4호선</td><td>26 stations (당고개~오이도)</td><td><code>#00A5DE</code></td></tr>
+              <tr><td>5호선</td><td>51 stations (방화~마천)</td><td><code>#996CAC</code></td></tr>
+              <tr><td>6호선</td><td>38 stations (응암~신내)</td><td><code>#CD7C2F</code></td></tr>
+              <tr><td>7호선</td><td>39 stations (장암~부평)</td><td><code>#747F00</code></td></tr>
+              <tr><td>8호선</td><td>11 stations (암사~모란)</td><td><code>#E6186C</code></td></tr>
+              <tr><td>9호선</td><td>38 stations (개화~중앙보훈병원)</td><td><code>#BDB092</code></td></tr>
+              <tr><td>분당선</td><td>33 stations (왕십리~수원)</td><td><code>#FABE00</code></td></tr>
+              <tr><td>신분당선</td><td>16 stations (신사~광교)</td><td><code>#D31145</code></td></tr>
+              <tr><td>경의중앙선</td><td>26 stations (서울역~문산, 옥수~덕소)</td><td><code>#77C4A3</code></td></tr>
+            </tbody>
+          </table>
+          <h3>Region Data</h3>
+          <table className="arch__table arch__table--full">
+            <thead>
+              <tr><th>Region</th><th>Count</th><th>Examples</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>서울</td><td>25 districts</td><td>강남구, 서초구, 마포구, 종로구, 송파구...</td></tr>
+              <tr><td>경기 남부</td><td>17 cities</td><td>성남시, 판교, 분당, 수원시, 용인시, 안양시...</td></tr>
+              <tr><td>경기 북부</td><td>10 cities</td><td>고양시, 일산, 파주시, 의정부시, 남양주시...</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        {/* Recommendation System */}
+        <section className="arch__section">
+          <h2>Recommendation System</h2>
+          <p className="arch__desc">
+            The recommendation tab (<strong>추천</strong>) discovers nearby restaurants based on user's
+            location. It uses Kakao Local API's category search (FD6 = 음식점) with coordinate-based
+            radius query, sorted by distance. Results are enriched with thumbnails and filtered to
+            exclude non-restaurant places (노래방, 술집, PC방). Users can add recommendations directly
+            to their game list.
+          </p>
+          <MermaidChart chart={RECOMMEND_FLOW} id="recommend-flow" />
+          <h3>Non-Restaurant Filter</h3>
+          <p className="arch__desc">
+            Kakao's FD6 category includes some non-restaurant places. The API response is filtered by:
+          </p>
+          <table className="arch__table arch__table--full">
+            <thead>
+              <tr><th>Filter Type</th><th>Excluded</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Name keywords</td><td>노래방, 노래연습, 코인노래, 룸카페, PC방, 피씨방</td></tr>
+              <tr><td>Category subcategories</td><td>술집, 호프, 요리주점, 일본식주점, 바(BAR)</td></tr>
+            </tbody>
+          </table>
+          <h3>Thumbnail Enrichment (2-layer)</h3>
+          <table className="arch__table arch__table--full">
+            <thead>
+              <tr><th>Priority</th><th>Source</th><th>Method</th><th>Accuracy</th><th>Speed</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1st</td><td>Kakao Place</td><td>Fetch <code>place.map.kakao.com/&#123;id&#125;</code>, parse <code>og:image</code> meta tag</td><td>100% (exact ID)</td><td>~88ms</td></tr>
+              <tr><td>2nd</td><td>Naver GraphQL</td><td>Search <code>name + 동name</code> for imageUrl</td><td>Good (dong-level match)</td><td>~189ms</td></tr>
             </tbody>
           </table>
         </section>
@@ -526,6 +662,12 @@ export function ArchitectureModal({ onClose }: Props) {
               <tr><td>Serverless functions as API proxy</td><td>Keeps API keys server-side. Handles CORS. In-memory caching reduces external API calls.</td></tr>
               <tr><td>JWT over sessions</td><td>Stateless auth works across Vercel (frontend) and Docker (backend) without shared session store.</td></tr>
               <tr><td>CSS variables for theming</td><td>Dark mode with zero JS re-renders. All components automatically adapt through variable swap.</td></tr>
+              <tr><td>Kakao category search for recommendations</td><td>Only API that supports coordinate + radius + category filter. Naver GraphQL has no geo-search.</td></tr>
+              <tr><td>Kakao og:image for thumbnails</td><td>Exact match by place ID (~88ms). Naver GraphQL search by name can return wrong restaurant for common names.</td></tr>
+              <tr><td>Static subway data (412 stations)</td><td>GitHub open data source. No API key needed. Covers 12 lines including 신분당선 and 경의중앙선.</td></tr>
+              <tr><td>Shared region/subway data files</td><td>Both search and recommend tabs reuse the same location data. Single source of truth.</td></tr>
+              <tr><td>Non-restaurant filtering</td><td>Kakao FD6 category includes 노래방 and bars. Server-side filter by name/category keywords.</td></tr>
+              <tr><td>Explicit search button (recommendations)</td><td>No auto-fetch on location change. User configures location + budget first, then searches.</td></tr>
             </tbody>
           </table>
         </section>
