@@ -236,17 +236,25 @@ async function fetchFromKakao(lat: number, lng: number, radiusM: number): Promis
 // Thumbnail enrichment (Kakao og:image + Naver GraphQL)
 // ──────────────────────────────────────────────
 async function enrichWithThumbnails(results: RecommendResult[]): Promise<RecommendResult[]> {
-  // Only enrich first 30 to keep response time reasonable
-  const toEnrich = results.slice(0, 30);
-  const rest = results.slice(30);
+  // Enrich in batches of 10 to avoid overwhelming external APIs
+  // Enrich first 50 results for good coverage
+  const ENRICH_LIMIT = 50;
+  const BATCH_SIZE = 10;
+  const toEnrich = results.slice(0, ENRICH_LIMIT);
+  const rest = results.slice(ENRICH_LIMIT);
 
-  const enriched = await Promise.all(
-    toEnrich.map(async (r) => {
-      const imageUrl = (r.source === 'kakao' ? await fetchKakaoOgImage(r.id) : null)
-        || await fetchNaverImageUrl(r);
-      return imageUrl ? { ...r, imageUrl } : r;
-    })
-  );
+  const enriched: RecommendResult[] = [];
+  for (let i = 0; i < toEnrich.length; i += BATCH_SIZE) {
+    const batch = toEnrich.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (r) => {
+        const imageUrl = (r.source === 'kakao' ? await fetchKakaoOgImage(r.id) : null)
+          || await fetchNaverImageUrl(r);
+        return imageUrl ? { ...r, imageUrl } : r;
+      })
+    );
+    enriched.push(...batchResults);
+  }
 
   return [...enriched, ...rest];
 }
