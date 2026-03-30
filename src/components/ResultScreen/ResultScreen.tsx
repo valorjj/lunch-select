@@ -1,11 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Restaurant, MenuItem } from '../../types/restaurant';
 import { SharePanel } from '../SharePanel/SharePanel';
-// TODO: Re-enable when NCP API issues are resolved
-// import { NaverMap } from '../NaverMap/NaverMap';
-// import { StartingPoint } from '../StartingPoint/StartingPoint';
-// import { ErrorBoundary } from '../ErrorBoundary';
-// import { useDirections, formatDistance, formatDuration } from '../../hooks/useDirections';
 import './ResultScreen.scss';
 
 interface StartingPointData {
@@ -21,6 +16,77 @@ interface ResultScreenProps {
   onRetry: () => void;
   onStartOver: () => void;
   onUpdateStartingPoint: (point: StartingPointData) => void;
+}
+
+declare global {
+  interface Window { kakao: any; }
+}
+
+const KAKAO_JS_KEY = process.env.REACT_APP_KAKAO_JS_KEY || '';
+
+function KakaoMapView({ lat, lng, name }: { lat: number; lng: number; name: string }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!KAKAO_JS_KEY || !lat || !lng) {
+      setError(true);
+      return;
+    }
+
+    // Load Kakao Maps SDK if not already loaded
+    if (window.kakao?.maps) {
+      setLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
+    script.onload = () => {
+      window.kakao.maps.load(() => setLoaded(true));
+    };
+    script.onerror = () => setError(true);
+    document.head.appendChild(script);
+  }, [lat, lng]);
+
+  useEffect(() => {
+    if (!loaded || !mapRef.current || !lat || !lng) return;
+
+    const position = new window.kakao.maps.LatLng(lat, lng);
+    const map = new window.kakao.maps.Map(mapRef.current, {
+      center: position,
+      level: 3,
+    });
+
+    // Marker
+    const marker = new window.kakao.maps.Marker({ position, map });
+
+    // Info window
+    const infoWindow = new window.kakao.maps.InfoWindow({
+      content: `<div style="padding:5px 10px;font-size:13px;font-weight:600;white-space:nowrap;">${name}</div>`,
+    });
+    infoWindow.open(map, marker);
+
+    // Controls
+    map.addControl(new window.kakao.maps.ZoomControl(), window.kakao.maps.ControlPosition.RIGHT);
+  }, [loaded, lat, lng, name]);
+
+  if (error || !KAKAO_JS_KEY) {
+    // Fallback: link to Kakao Map
+    return (
+      <a
+        className="result-screen__map-link"
+        href={`https://map.kakao.com/?q=${encodeURIComponent(name)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        카카오맵에서 보기
+      </a>
+    );
+  }
+
+  return <div ref={mapRef} className="result-screen__map" />;
 }
 
 function formatPrice(price: number | null): string {
@@ -99,6 +165,14 @@ export function ResultScreen({
           )}
         </div>
       </div>
+
+      {/* Map */}
+      {winner.lat && winner.lng && (
+        <div className="result-screen__map-section">
+          <h4 className="result-screen__map-title">위치</h4>
+          <KakaoMapView lat={winner.lat} lng={winner.lng} name={winner.name} />
+        </div>
+      )}
 
       {/* Menu section */}
       <div className="result-screen__menu-section">
