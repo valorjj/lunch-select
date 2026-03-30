@@ -1,6 +1,85 @@
 .recommend-tab {
   width: 100%;
 
+  // Mode selector
+  &__modes {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__mode {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.5rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: 10px;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover {
+      border-color: rgba(var(--color-primary-rgb), 0.4);
+      color: var(--color-text);
+    }
+
+    &--active {
+      border-color: var(--color-primary);
+      background: rgba(var(--color-primary-rgb), 0.06);
+      color: var(--color-primary);
+    }
+  }
+
+  // Preset chips (gu / subway)
+  &__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  &__preset {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    background: none;
+    color: var(--color-text);
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    &--active {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      color: #fff;
+
+      &:hover {
+        color: #fff;
+        background: var(--color-primary-dark);
+      }
+    }
+  }
+
   // Location status bar
   &__location {
     display: flex;
