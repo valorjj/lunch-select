@@ -36,6 +36,23 @@
     }
   }
 
+  &__arch-btn {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+  }
+
   &__header {
     text-align: center;
     padding: 1rem 1rem 1rem;

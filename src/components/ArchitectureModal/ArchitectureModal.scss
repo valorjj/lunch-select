@@ -1,0 +1,144 @@
+.arch-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+  animation: arch-fade-in 0.2s ease;
+
+  &__card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem 1.5rem 1.5rem;
+    max-width: 520px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  }
+
+  &__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.25rem;
+
+    &:hover {
+      color: var(--color-text);
+    }
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 1.25rem;
+  }
+
+  &__section {
+    margin-bottom: 1.25rem;
+
+    h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 0.5rem;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.2rem;
+      list-style: disc;
+
+      li {
+        font-size: 0.82rem;
+        color: var(--color-text);
+        line-height: 1.6;
+      }
+    }
+  }
+
+  &__flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(var(--color-primary-rgb), 0.05);
+    border-radius: 10px;
+    border-left: 3px solid var(--color-primary);
+
+    strong {
+      font-size: 0.82rem;
+      color: var(--color-text);
+    }
+
+    p {
+      margin: 0.15rem 0 0;
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      line-height: 1.4;
+    }
+  }
+
+  &__flow-badge {
+    flex-shrink: 0;
+    width: 1.4rem;
+    height: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-top: 0.15rem;
+
+    &--alt {
+      background: var(--color-accent);
+    }
+  }
+
+  &__flow-arrow {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    padding: 0.1rem 0;
+  }
+
+  &__diagram {
+    padding: 0.75rem;
+    background: var(--color-bg-muted, #f7f7f9);
+    border-radius: 10px;
+
+    code {
+      font-size: 0.72rem;
+      color: var(--color-text);
+      line-height: 1.6;
+      white-space: pre;
+    }
+  }
+}
+
+@keyframes arch-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

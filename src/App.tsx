@@ -15,6 +15,7 @@ import { WordGame } from './components/WordGame/WordGame';
 import { BookmarkSection } from './components/BookmarkSection/BookmarkSection';
 import { VisitorCounter } from './components/VisitorCounter/VisitorCounter';
 import { AdminPanel } from './components/AdminPanel/AdminPanel';
+import { ArchitectureModal } from './components/ArchitectureModal/ArchitectureModal';
 import { decodeSharedResult } from './components/SharePanel/SharePanel';
 import './App.scss';
 
@@ -27,6 +28,7 @@ function App() {
   const [cafePhase, setCafePhase] = useState<AppPhase>('input');
   const [winner, setWinner] = useState<Restaurant | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showArch, setShowArch] = useState(false);
   const [gameType, setGameType] = useState<GameType>('gacha');
 
   // Check for shared result in URL
@@ -108,6 +110,7 @@ function App() {
         <div className="app__header-top">
           <VisitorCounter />
           <div className="app__header-right">
+            <button className="app__arch-btn" onClick={() => setShowArch(true)} title="Architecture">&#9881;</button>
             {user && (user as any).isAdmin && (
               <button className="app__admin-btn" onClick={() => setShowAdmin(true)}>Admin</button>
             )}
@@ -205,6 +208,7 @@ function App() {
         )}
       </main>
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} isSuperAdmin={user?.email === 'valorjj@gmail.com'} />}
+      {showArch && <ArchitectureModal onClose={() => setShowArch(false)} />}
     </div>
   );
 }

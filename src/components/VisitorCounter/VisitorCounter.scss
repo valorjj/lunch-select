@@ -19,4 +19,15 @@
     font-weight: 700;
     font-size: 0.78rem;
   }
+
+  &__sep {
+    color: var(--color-border);
+    margin: 0 0.1rem;
+  }
+
+  &__total {
+    color: var(--color-text-muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
 }

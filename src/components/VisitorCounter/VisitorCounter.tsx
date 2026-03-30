@@ -8,30 +8,30 @@ function getTodayKey(): string {
 
 export function VisitorCounter() {
   const [count, setCount] = useState<number | null>(null);
+  const [total, setTotal] = useState<number | null>(null);
 
   useEffect(() => {
     const todayKey = getTodayKey();
     const alreadyTracked = localStorage.getItem(todayKey);
 
     if (!alreadyTracked) {
-      // First visit today — track and get count
       apiFetch('/api/visitors/track', { method: 'POST' })
         .then((res) => res.ok ? res.json() : null)
         .then((data) => {
           if (data?.count != null) {
             setCount(data.count);
-            // Mark as tracked for today, clean up old keys
+            if (data.total != null) setTotal(data.total);
             localStorage.setItem(todayKey, '1');
             cleanOldKeys(todayKey);
           }
         })
         .catch(() => {});
     } else {
-      // Already tracked today — just fetch current count
       apiFetch('/api/visitors/today')
         .then((res) => res.ok ? res.json() : null)
         .then((data) => {
           if (data?.count != null) setCount(data.count);
+          if (data?.total != null) setTotal(data.total);
         })
         .catch(() => {});
     }
@@ -43,6 +43,13 @@ export function VisitorCounter() {
     <div className="visitor-counter">
       <span className="visitor-counter__label">TODAY</span>
       <span className="visitor-counter__count">{count.toLocaleString()}</span>
+      {total !== null && (
+        <>
+          <span className="visitor-counter__sep">|</span>
+          <span className="visitor-counter__label">TOTAL</span>
+          <span className="visitor-counter__total">{total.toLocaleString()}</span>
+        </>
+      )}
     </div>
   );
 }
