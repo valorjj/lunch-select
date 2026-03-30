@@ -9,6 +9,7 @@ interface RestaurantListProps {
   restaurants: Restaurant[];
   onRemove: (id: string) => void;
   onStartGame: () => void;
+  onClearAll?: () => void;
   isLoading?: boolean;
   isBookmarked?: (placeId: string) => boolean;
   onToggleBookmark?: (placeId: string, restaurant: Restaurant) => void;
@@ -17,7 +18,7 @@ interface RestaurantListProps {
   emptyHint?: string;
 }
 
-export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, isBookmarked, onToggleBookmark, emptyIcon, emptyText, emptyHint }: RestaurantListProps) {
+export function RestaurantList({ restaurants, onRemove, onStartGame, onClearAll, isLoading, isBookmarked, onToggleBookmark, emptyIcon, emptyText, emptyHint }: RestaurantListProps) {
   const canStartGame = restaurants.length >= APP_CONFIG.minRestaurants;
 
   if (restaurants.length === 0 && isLoading) {
@@ -46,8 +47,15 @@ export function RestaurantList({ restaurants, onRemove, onStartGame, isLoading, 
 
   return (
     <div className="restaurant-list">
-      <div className="restaurant-list__count">
-        추가된 음식점 <strong>{restaurants.length}</strong>개
+      <div className="restaurant-list__header">
+        <div className="restaurant-list__count">
+          추가된 음식점 <strong>{restaurants.length}</strong>개
+        </div>
+        {onClearAll && restaurants.length > 0 && (
+          <button className="restaurant-list__clear" onClick={onClearAll}>
+            전체 삭제
+          </button>
+        )}
       </div>
 
       <div className="restaurant-list__grid">

@@ -164,7 +164,10 @@ function App() {
 
         {isRecommend && (
           <div className="fade-in">
-            <RecommendTab onSelect={restaurantStore.addFromSearch} />
+            <RecommendTab
+              onSelect={restaurantStore.addFromSearch}
+              existingIds={new Set(restaurantStore.restaurants.map(r => r.id))}
+            />
           </div>
         )}
 
@@ -174,6 +177,7 @@ function App() {
               onSelect={store.addFromSearch}
               disabled={store.isLoading || !isOnline}
               placeholder={isOnline ? searchPlaceholder : '오프라인 - 즐겨찾기에서 추가하세요'}
+              existingIds={new Set(store.restaurants.map(r => r.id))}
             />
             {store.error && <p className="app__error">{store.error}</p>}
             <BookmarkSection
@@ -186,6 +190,7 @@ function App() {
               restaurants={store.restaurants}
               onRemove={store.removeRestaurant}
               onStartGame={handleStartGame}
+              onClearAll={store.clearAll}
               isLoading={store.isLoading}
               isBookmarked={isBookmarked}
               onToggleBookmark={toggleBookmark}

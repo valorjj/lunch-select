@@ -43,9 +43,10 @@ interface RestaurantSearchProps {
   onSelect: (result: SearchResult) => void;
   disabled?: boolean;
   placeholder?: string;
+  existingIds?: Set<string>;
 }
 
-export function RestaurantSearch({ onSelect, disabled, placeholder }: RestaurantSearchProps) {
+export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds }: RestaurantSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
@@ -385,7 +386,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
           {results.length > 0 && (
             <div className={`restaurant-search__results restaurant-search__results--${viewMode}`}>
               {results.map((result) => {
-                const isAdded = addedIds.has(result.id);
+                const isAdded = addedIds.has(result.id) || (existingIds?.has(result.id) ?? false);
                 return viewMode === 'list' ? (
                   <div key={result.id} className="restaurant-search__item">
                     {result.imageUrl && (

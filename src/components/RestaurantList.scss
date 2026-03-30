@@ -1,14 +1,38 @@
 .restaurant-list {
   width: 100%;
 
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
   &__count {
     font-size: 0.9rem;
     color: var(--color-text-muted);
-    margin-bottom: 1rem;
 
     strong {
       color: var(--color-primary);
       font-weight: 700;
+    }
+  }
+
+  &__clear {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid rgba(var(--color-error-rgb), 0.3);
+    border-radius: 6px;
+    background: none;
+    color: var(--color-error);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover {
+      background: rgba(var(--color-error-rgb), 0.08);
+      border-color: var(--color-error);
     }
   }
 

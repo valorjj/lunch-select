@@ -11,6 +11,7 @@ interface RecommendResult extends SearchResult {
 
 interface RecommendTabProps {
   onSelect: (result: SearchResult) => void;
+  existingIds?: Set<string>;
 }
 
 type LocationMode = 'gps' | 'gu' | 'subway';
@@ -52,7 +53,7 @@ function formatBudget(won: number): string {
   return new Intl.NumberFormat('ko-KR').format(won) + '\uC6D0';
 }
 
-export function RecommendTab({ onSelect }: RecommendTabProps) {
+export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   const { location: gpsLocation, isLoading: geoLoading, error: geoError, requestLocation } = useGeolocation(false);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
   const [selectedPreset, setSelectedPreset] = useState<PresetLocation | null>(null);
@@ -329,7 +330,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
           </div>
           <div className="recommend-tab__grid">
             {filteredResults.map((r) => {
-              const isAdded = addedIds.has(r.id);
+              const isAdded = addedIds.has(r.id) || (existingIds?.has(r.id) ?? false);
               return (
                 <div key={r.id} className="recommend-tab__card">
                   <div className="recommend-tab__card-top">
