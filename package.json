@@ -12,6 +12,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "canvas-confetti": "^1.9.4",
+    "mermaid": "^11.13.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-scripts": "5.0.1",
@@ -44,6 +45,7 @@
     ]
   },
   "devDependencies": {
-    "@types/canvas-confetti": "^1.9.0"
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/d3-dispatch": "^3.0.6"
   }
 }
