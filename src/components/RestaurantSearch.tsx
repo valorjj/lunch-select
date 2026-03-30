@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { SearchResult } from '../types/restaurant';
 import { apiFetch } from '../utils/api';
 import { GlobalLoader } from './GlobalLoader/GlobalLoader';
+import { SUBWAY_LINES } from '../data/subwayLines';
 import './RestaurantSearch.scss';
 
 const SEARCH_API_BASE = '';
@@ -59,6 +60,8 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
   const [history, setHistory] = useState<string[]>(loadHistory);
   const [showHistory, setShowHistory] = useState(false);
   const [areaPrefix, setAreaPrefix] = useState('');
+  const [areaMode, setAreaMode] = useState<'area' | 'gu' | 'subway'>('area');
+  const [showSubwayModal, setShowSubwayModal] = useState(false);
 
   const fetchPage = useCallback(async (searchQuery: string, page: number) => {
     const response = await fetch(
@@ -176,27 +179,104 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
   };
 
   const AREA_PRESETS = ['강남', '역삼', '서초', '홍대', '신촌', '이태원', '여의도', '종로', '잠실', '판교', '구로'];
+  const SEOUL_GU = ['강남구','강동구','강북구','강서구','관악구','광진구','구로구','금천구','노원구','도봉구','동대문구','동작구','마포구','서대문구','서초구','성동구','성북구','송파구','양천구','영등포구','용산구','은평구','종로구','중구','중랑구'];
+
+  const handleAreaModeChange = (mode: 'area' | 'gu' | 'subway') => {
+    setAreaMode(mode);
+    if (mode === 'subway') {
+      setShowSubwayModal(true);
+    }
+    if (mode === 'area') {
+      // Keep existing areaPrefix or clear
+    } else if (mode !== 'subway') {
+      setAreaPrefix('');
+    }
+  };
+
+  const handleSubwaySelect = (station: { name: string }) => {
+    setAreaPrefix(station.name);
+    setAreaMode('subway');
+    setShowSubwayModal(false);
+  };
 
   return (
     <div className="restaurant-search">
       <GlobalLoader visible={isSearching} message="맛집 검색 중..." />
-      <div className="restaurant-search__areas">
+
+      {/* 3-mode selector */}
+      <div className="restaurant-search__modes">
         <button
-          className={`restaurant-search__area ${!areaPrefix ? 'restaurant-search__area--active' : ''}`}
-          onClick={() => setAreaPrefix('')}
+          className={`restaurant-search__mode ${areaMode === 'area' ? 'restaurant-search__mode--active' : ''}`}
+          onClick={() => handleAreaModeChange('area')}
         >
-          전체
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          지역
         </button>
-        {AREA_PRESETS.map((area) => (
-          <button
-            key={area}
-            className={`restaurant-search__area ${areaPrefix === area ? 'restaurant-search__area--active' : ''}`}
-            onClick={() => setAreaPrefix(areaPrefix === area ? '' : area)}
-          >
-            {area}
-          </button>
-        ))}
+        <button
+          className={`restaurant-search__mode ${areaMode === 'gu' ? 'restaurant-search__mode--active' : ''}`}
+          onClick={() => handleAreaModeChange('gu')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
+          서울 구별
+        </button>
+        <button
+          className={`restaurant-search__mode ${areaMode === 'subway' ? 'restaurant-search__mode--active' : ''}`}
+          onClick={() => handleAreaModeChange('subway')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="3" width="16" height="14" rx="3"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="8" y1="17" x2="5" y2="21"/><line x1="16" y1="17" x2="19" y2="21"/><circle cx="9" cy="7" r="1" fill="currentColor"/><circle cx="15" cy="7" r="1" fill="currentColor"/>
+          </svg>
+          지하철역
+        </button>
       </div>
+
+      {/* Area quick chips */}
+      {areaMode === 'area' && (
+        <div className="restaurant-search__areas">
+          <button
+            className={`restaurant-search__area ${!areaPrefix ? 'restaurant-search__area--active' : ''}`}
+            onClick={() => setAreaPrefix('')}
+          >
+            전체
+          </button>
+          {AREA_PRESETS.map((area) => (
+            <button
+              key={area}
+              className={`restaurant-search__area ${areaPrefix === area ? 'restaurant-search__area--active' : ''}`}
+              onClick={() => setAreaPrefix(areaPrefix === area ? '' : area)}
+            >
+              {area}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Gu chips */}
+      {areaMode === 'gu' && (
+        <div className="restaurant-search__areas">
+          {SEOUL_GU.map((gu) => (
+            <button
+              key={gu}
+              className={`restaurant-search__area ${areaPrefix === gu ? 'restaurant-search__area--active' : ''}`}
+              onClick={() => setAreaPrefix(areaPrefix === gu ? '' : gu)}
+            >
+              {gu}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Subway selected chip */}
+      {areaMode === 'subway' && areaPrefix && (
+        <div className="restaurant-search__subway-chip">
+          <span>{areaPrefix}</span>
+          <button onClick={() => setShowSubwayModal(true)}>변경</button>
+        </div>
+      )}
       <form className="restaurant-search__form" onSubmit={handleSubmit}>
         <input
           type="text"
@@ -360,6 +440,90 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
           )}
         </div>
       )}
+
+      {/* Subway modal */}
+      {showSubwayModal && (
+        <SearchSubwayModal
+          onSelect={handleSubwaySelect}
+          onClose={() => setShowSubwayModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SearchSubwayModal({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (station: { name: string; lat: number; lng: number }) => void;
+  onClose: () => void;
+}) {
+  const [selectedLine, setSelectedLine] = useState(SUBWAY_LINES[0].line);
+  const [search, setSearch] = useState('');
+
+  const currentLine = SUBWAY_LINES.find((l) => l.line === selectedLine)!;
+
+  const filteredStations = search
+    ? SUBWAY_LINES.flatMap((l) =>
+        l.stations
+          .filter((s) => s.name.includes(search))
+          .map((s) => ({ ...s, line: l.line, color: l.color }))
+      )
+    : currentLine.stations.map((s) => ({ ...s, line: currentLine.line, color: currentLine.color }));
+
+  return (
+    <div className="subway-modal" onClick={onClose}>
+      <div className="subway-modal__card" onClick={(e) => e.stopPropagation()}>
+        <div className="subway-modal__header">
+          <h3>지하철역 선택</h3>
+          <button className="subway-modal__close" onClick={onClose}>&times;</button>
+        </div>
+        <input
+          className="subway-modal__search"
+          type="text"
+          placeholder="역명 검색 (예: 강남)"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          autoFocus
+        />
+        {!search && (
+          <div className="subway-modal__lines">
+            {SUBWAY_LINES.map((l) => (
+              <button
+                key={l.line}
+                className={`subway-modal__line ${selectedLine === l.line ? 'subway-modal__line--active' : ''}`}
+                style={{
+                  borderColor: selectedLine === l.line ? l.color : undefined,
+                  color: selectedLine === l.line ? l.color : undefined,
+                  backgroundColor: selectedLine === l.line ? `${l.color}12` : undefined,
+                }}
+                onClick={() => setSelectedLine(l.line)}
+              >
+                {l.line}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="subway-modal__stations">
+          {search && <div className="subway-modal__search-label">{`"${search}" 검색 결과 (${filteredStations.length}건)`}</div>}
+          {filteredStations.length === 0 && (
+            <div className="subway-modal__empty">검색 결과가 없습니다</div>
+          )}
+          <div className="subway-modal__station-grid">
+            {filteredStations.map((s, i) => (
+              <button
+                key={`${s.line}-${s.name}-${i}`}
+                className="subway-modal__station"
+                onClick={() => onSelect(s)}
+              >
+                {search && <span className="subway-modal__station-dot" style={{ background: s.color }} />}
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

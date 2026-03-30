@@ -57,20 +57,6 @@ function formatBudget(won: number): string {
   return new Intl.NumberFormat('ko-KR').format(won) + '\uC6D0';
 }
 
-// Quick area chips matching the search tab
-const QUICK_AREAS: PresetLocation[] = [
-  { name: '\uAC15\uB0A8', lat: 37.4979, lng: 127.0276 },
-  { name: '\uC5ED\uC0BC', lat: 37.5007, lng: 127.0365 },
-  { name: '\uC11C\uCD08', lat: 37.4837, lng: 127.0324 },
-  { name: '\uD64D\uB300', lat: 37.5571, lng: 126.9246 },
-  { name: '\uC2E0\uCD0C', lat: 37.5553, lng: 126.9372 },
-  { name: '\uC774\uD0DC\uC6D0', lat: 37.5345, lng: 126.9945 },
-  { name: '\uC5EC\uC758\uB3C4', lat: 37.5217, lng: 126.9243 },
-  { name: '\uC885\uB85C', lat: 37.5735, lng: 126.9790 },
-  { name: '\uC7A0\uC2E4', lat: 37.5133, lng: 127.1001 },
-  { name: '\uD310\uAD50', lat: 37.3948, lng: 127.1112 },
-];
-
 export function RecommendTab({ onSelect }: RecommendTabProps) {
   const { location: gpsLocation, isLoading: geoLoading, error: geoError, requestLocation } = useGeolocation(false);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
@@ -157,39 +143,39 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
 
   return (
     <div className="recommend-tab">
-      {/* Area chips — same style as search tab */}
-      <div className="recommend-tab__areas">
+      {/* Location mode selector */}
+      <div className="recommend-tab__modes">
         <button
-          className={`recommend-tab__area ${locationMode === 'gps' && !selectedPreset ? 'recommend-tab__area--active' : ''}`}
+          className={`recommend-tab__mode ${locationMode === 'gps' ? 'recommend-tab__mode--active' : ''}`}
           onClick={() => handleModeChange('gps')}
         >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+          </svg>
           {'\uD604\uC7AC \uC704\uCE58'}
         </button>
-        {QUICK_AREAS.map((area) => (
-          <button
-            key={area.name}
-            className={`recommend-tab__area ${selectedPreset?.name === area.name ? 'recommend-tab__area--active' : ''}`}
-            onClick={() => { setLocationMode('gu'); handlePresetSelect(area); }}
-          >
-            {area.name}
-          </button>
-        ))}
         <button
-          className={`recommend-tab__area ${locationMode === 'subway' ? 'recommend-tab__area--active' : ''}`}
-          onClick={() => { setLocationMode('subway'); setShowSubwayModal(true); }}
-        >
-          {selectedPreset && locationMode === 'subway' ? selectedPreset.name : '\uC9C0\uD558\uCCA0\uC5ED'}
-        </button>
-        <button
-          className="recommend-tab__area"
+          className={`recommend-tab__mode ${locationMode === 'gu' ? 'recommend-tab__mode--active' : ''}`}
           onClick={() => handleModeChange('gu')}
         >
-          {'\uAD6C \uC804\uCCB4 \u25BE'}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
+          {'\uC11C\uC6B8 \uAD6C\uBCC4'}
+        </button>
+        <button
+          className={`recommend-tab__mode ${locationMode === 'subway' ? 'recommend-tab__mode--active' : ''}`}
+          onClick={() => { setLocationMode('subway'); setShowSubwayModal(true); }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="3" width="16" height="14" rx="3"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="8" y1="17" x2="5" y2="21"/><line x1="16" y1="17" x2="19" y2="21"/><circle cx="9" cy="7" r="1" fill="currentColor"/><circle cx="15" cy="7" r="1" fill="currentColor"/>
+          </svg>
+          {'\uC9C0\uD558\uCCA0\uC5ED'}
         </button>
       </div>
 
-      {/* Full gu list (expandable) */}
-      {locationMode === 'gu' && !QUICK_AREAS.some((a) => a.name === selectedPreset?.name) && (
+      {/* Gu preset chips */}
+      {locationMode === 'gu' && (
         <div className="recommend-tab__presets">
           {SEOUL_GU.map((preset) => (
             <button
@@ -200,6 +186,14 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
               {preset.name}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Selected subway station chip */}
+      {locationMode === 'subway' && selectedPreset && (
+        <div className="recommend-tab__selected-station">
+          <span>{selectedPreset.name}</span>
+          <button onClick={() => setShowSubwayModal(true)}>{'\uBCC0\uACBD'}</button>
         </div>
       )}
 
