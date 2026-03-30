@@ -74,12 +74,6 @@ export function AuthButton({ user, isLoading, onLogin, onLogout }: AuthButtonPro
           >
             Google 로그인
           </button>
-          <button
-            className="auth-button__menu-item auth-button__menu-item--naver"
-            onClick={() => onLogin('naver')}
-          >
-            네이버 로그인
-          </button>
         </div>
       )}
     </div>
