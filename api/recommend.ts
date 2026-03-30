@@ -10,7 +10,6 @@ interface RecommendResult {
   lng: number;
   phone: string;
   distance: number;
-  imageUrl?: string;
   source: 'tmap' | 'kakao';
 }
 
@@ -35,15 +34,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (TMAP_APP_KEY) {
       const result = await fetchFromTmap(lat, lng, radius, page, count);
       if (result) {
-        const enriched = await enrichWithThumbnails(result.results);
-        return res.status(200).json({ results: enriched, total: result.total });
+        return res.status(200).json({ results: result.results, total: result.total });
       }
     }
 
     // Fallback: Kakao grid subdivision
     const kakaoResult = await fetchFromKakao(lat, lng, radius);
-    const enriched = await enrichWithThumbnails(kakaoResult);
-    return res.status(200).json({ results: enriched, total: enriched.length });
+    return res.status(200).json({ results: kakaoResult, total: kakaoResult.length });
   } catch (error: any) {
     console.error('Recommend API error:', error.message);
     return res.status(500).json({ error: 'Failed to fetch recommendations', message: error.message });
@@ -232,78 +229,3 @@ async function fetchFromKakao(lat: number, lng: number, radiusM: number): Promis
     .sort((a, b) => a.distance - b.distance);
 }
 
-// ──────────────────────────────────────────────
-// Thumbnail enrichment (Kakao og:image + Naver GraphQL)
-// ──────────────────────────────────────────────
-async function enrichWithThumbnails(results: RecommendResult[]): Promise<RecommendResult[]> {
-  // Enrich in batches of 10 to avoid overwhelming external APIs
-  // Enrich first 50 results for good coverage
-  const ENRICH_LIMIT = 50;
-  const BATCH_SIZE = 10;
-  const toEnrich = results.slice(0, ENRICH_LIMIT);
-  const rest = results.slice(ENRICH_LIMIT);
-
-  const enriched: RecommendResult[] = [];
-  for (let i = 0; i < toEnrich.length; i += BATCH_SIZE) {
-    const batch = toEnrich.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.all(
-      batch.map(async (r) => {
-        const imageUrl = (r.source === 'kakao' ? await fetchKakaoOgImage(r.id) : null)
-          || await fetchNaverImageUrl(r);
-        return imageUrl ? { ...r, imageUrl } : r;
-      })
-    );
-    enriched.push(...batchResults);
-  }
-
-  return [...enriched, ...rest];
-}
-
-async function fetchKakaoOgImage(kakaoId: string): Promise<string | null> {
-  try {
-    const resp = await fetch(`https://place.map.kakao.com/${kakaoId}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-        'Accept': 'text/html',
-      },
-    });
-    if (!resp.ok) return null;
-    const html = await resp.text();
-    const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
-    if (match?.[1] && !match[1].includes('kakaomapapi')) return match[1];
-  } catch { /* ignore */ }
-  return null;
-}
-
-async function fetchNaverImageUrl(r: RecommendResult): Promise<string | null> {
-  try {
-    const dongMatch = r.address.match(/(\S+동)\b/);
-    const query = dongMatch ? `${r.name} ${dongMatch[1]}` : r.name;
-
-    const body = {
-      operationName: 'getRestaurants',
-      variables: { input: { query, display: 1, start: 1, deviceType: 'pcmap' } },
-      query: `query getRestaurants($input: RestaurantListInput) {
-        restaurantList(input: $input) { items { id name imageUrl } }
-      }`,
-    };
-
-    const resp = await fetch('https://pcmap-api.place.naver.com/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Language': 'ko',
-        'Origin': 'https://pcmap.place.naver.com',
-        'Referer': 'https://pcmap.place.naver.com/',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    return data?.data?.restaurantList?.items?.[0]?.imageUrl || null;
-  } catch { /* ignore */ }
-  return null;
-}

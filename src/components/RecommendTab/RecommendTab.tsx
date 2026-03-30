@@ -21,6 +21,28 @@ interface PresetLocation {
   lng: number;
 }
 
+const CUISINE_ICONS: Record<string, string> = {
+  '\uD55C\uC2DD': '\uD83C\uDDF0\uD83C\uDDF7',     // 한식 → 🇰🇷
+  '\uC911\uC2DD': '\uD83E\uDD62',                   // 중식 → 🥢
+  '\uC77C\uC2DD': '\uD83C\uDDEF\uD83C\uDDF5',     // 일식 → 🇯🇵
+  '\uC591\uC2DD': '\uD83C\uDF55',                   // 양식 → 🍕 (placeholder — no western flag)
+  '\uBD84\uC2DD': '\uD83C\uDF5C',                   // 분식 → 🍜
+  '\uCE58\uD0A8': '\uD83C\uDF57',                   // 치킨 → 🍗
+  '\uD328\uC2A4\uD2B8\uD478\uB4DC': '\uD83C\uDF54', // 패스트푸드 → 🍔
+  '\uC81C\uACFC\uC810': '\uD83C\uDF70',             // 제과점 → 🍰
+  '\uC0E4\uBE0C\uC0E4\uBE0C': '\uD83C\uDF72',     // 샤브샤브 → 🍲
+  '\uC138\uACC4\uC694\uB9AC': '\uD83C\uDF0D',       // 세계요리 → 🌍
+  '\uC804\uBB38\uC74C\uC2DD\uC810': '\uD83C\uDF7D\uFE0F', // 전문음식점 → 🍽️
+  '\uB2E4\uC774\uC5B4\uD2B8/\uC0D0\uB7EC\uB4DC': '\uD83E\uDD57', // 다이어트/샐러드 → 🥗
+  '\uB3C4\uC2DC\uB77D\uC804\uBB38': '\uD83C\uDF71', // 도시락전문 → 🍱
+  '\uBD80\uD398': '\uD83E\uDD58',                   // 부페 → 🥘
+  '\uD328\uBC00\uB9AC\uB808\uC2A4\uD1A0\uB791': '\uD83C\uDF7D\uFE0F', // 패밀리레스토랑 → 🍽️
+};
+
+function getCuisineIcon(cuisine: string): string {
+  return CUISINE_ICONS[cuisine] || '\uD83C\uDF74'; // default: 🍴
+}
+
 function formatDistance(meters: number): string {
   if (meters < 1000) return `${meters}m`;
   return `${(meters / 1000).toFixed(1)}km`;
@@ -310,26 +332,32 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
               const isAdded = addedIds.has(r.id);
               return (
                 <div key={r.id} className="recommend-tab__card">
-                  {r.imageUrl ? (
-                    <div className="recommend-tab__card-img">
-                      <img src={r.imageUrl} alt="" loading="lazy" />
-                      <span className="recommend-tab__card-distance">{formatDistance(r.distance)}</span>
+                  <div className="recommend-tab__card-top">
+                    <span className="recommend-tab__card-icon">{getCuisineIcon(getCuisine(r.category))}</span>
+                    <div className="recommend-tab__card-info">
+                      <div className="recommend-tab__card-name">{r.name}</div>
+                      <div className="recommend-tab__card-address">
+                        {r.roadAddress || r.address}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="recommend-tab__card-img recommend-tab__card-img--empty">
-                      <span className="recommend-tab__card-distance">{formatDistance(r.distance)}</span>
-                    </div>
-                  )}
-                  <div className="recommend-tab__card-body">
-                    <div className="recommend-tab__card-name">{r.name}</div>
-                    {r.category && (
-                      <span className="recommend-tab__card-category">
-                        {r.category.split('>').pop()?.trim() || r.category}
+                  </div>
+                  <div className="recommend-tab__card-badges">
+                    <span className="recommend-tab__badge recommend-tab__badge--cuisine">
+                      {getCuisine(r.category)}
+                    </span>
+                    <span className="recommend-tab__badge recommend-tab__badge--distance">
+                      {formatDistance(r.distance)}
+                    </span>
+                    {r.category.split('>').length > 2 && (
+                      <span className="recommend-tab__badge recommend-tab__badge--detail">
+                        {r.category.split('>').pop()?.trim().replace(/\\/g, '')}
                       </span>
                     )}
-                    <div className="recommend-tab__card-address">
-                      {r.roadAddress || r.address}
-                    </div>
+                    {r.phone && (
+                      <span className="recommend-tab__badge recommend-tab__badge--phone">
+                        {r.phone}
+                      </span>
+                    )}
                   </div>
                   <button
                     className={`recommend-tab__card-add ${isAdded ? 'recommend-tab__card-add--added' : ''}`}
