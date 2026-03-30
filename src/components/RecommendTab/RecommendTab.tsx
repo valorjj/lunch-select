@@ -40,8 +40,6 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [budget, setBudget] = useState(20000);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
@@ -63,16 +61,14 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
     ? results.filter((r) => getCuisine(r.category) === categoryFilter)
     : results;
 
-  const fetchRecommendations = useCallback(async (lat: number, lng: number, p: number) => {
+  const fetchRecommendations = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/recommend?lat=${lat}&lng=${lng}&radius=1000&page=${p}`);
+      const res = await fetch(`/api/recommend?lat=${lat}&lng=${lng}&radius=1000`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       setResults(data.results || []);
-      setTotalPages(data.totalPages || 0);
-      setPage(p);
       setCategoryFilter(null);
     } catch {
       setError('\uC8FC\uBCC0 \uC74C\uC2DD\uC810\uC744 \uBD88\uB7EC\uC624\uB294 \uB370 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
@@ -94,8 +90,15 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const handleSearch = () => {
     if (activeLocation) {
       setHasFetched(true);
-      fetchRecommendations(activeLocation.lat, activeLocation.lng, 1);
+      fetchRecommendations(activeLocation.lat, activeLocation.lng);
     }
+  };
+
+  const handleShuffle = () => {
+    setResults((prev) => {
+      const shuffled = [...prev].sort(() => Math.random() - 0.5);
+      return shuffled;
+    });
   };
 
   const handleModeChange = (mode: LocationMode) => {
@@ -105,7 +108,6 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
     } else {
       setSelectedPreset(null);
       setResults([]);
-      setPage(1);
     }
   };
 
@@ -121,10 +123,6 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const handleSelect = (result: RecommendResult) => {
     onSelect(result);
     setAddedIds((prev) => new Set(prev).add(result.id));
-  };
-
-  const handlePageChange = (newPage: number) => {
-    if (activeLocation) fetchRecommendations(activeLocation.lat, activeLocation.lng, newPage);
   };
 
   const locationLabel = locationMode === 'gps'
@@ -345,16 +343,15 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
             })}
           </div>
 
-          {totalPages > 1 && (
-            <div className="recommend-tab__pagination">
-              <button disabled={page <= 1 || isLoading} onClick={() => handlePageChange(page - 1)}>
-                {'\u2039 \uC774\uC804'}
-              </button>
-              <span>{page} / {totalPages}</span>
-              <button disabled={page >= totalPages || isLoading} onClick={() => handlePageChange(page + 1)}>
-                {'\uB2E4\uC74C \u203A'}
-              </button>
-            </div>
+          {filteredResults.length > 2 && (
+            <button className="recommend-tab__shuffle" onClick={handleShuffle}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+                <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+                <line x1="4" y1="4" x2="9" y2="9"/>
+              </svg>
+              {'\uB2E4\uC2DC \uCD94\uCC9C'}
+            </button>
           )}
         </>
       )}

@@ -33,33 +33,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const authHeader = kakaoRestKey ? `KakaoAK ${kakaoRestKey}` : `KakaoAK ${kakaoAdminKey}`;
 
   try {
-    // Kakao category search: FD6 = 음식점
-    const url = `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=FD6&x=${lng}&y=${lat}&radius=${radius}&sort=distance&size=15&page=${page}`;
-
-    const response = await fetch(url, {
-      headers: { Authorization: authHeader },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Kakao API error ${response.status}`);
-    }
-
-    const data = await response.json();
-    const meta = data.meta || {};
-    const total = meta.pageable_count || 0;
-    const totalPages = Math.ceil(total / 15);
-
-    // Filter out non-restaurant places (karaoke, bars, bakeries, etc.)
     const excludeKeywords = ['노래방', '노래연습', '코인노래', '룸카페', 'PC방', '피씨방'];
     const excludeCategories = ['술집', '호프', '요리주점', '일본식주점', '바(BAR)'];
 
-    const results: RecommendResult[] = (data.documents || [])
+    const fetchPage = async (p: number) => {
+      const url = `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=FD6&x=${lng}&y=${lat}&radius=${radius}&sort=distance&size=15&page=${p}`;
+      const response = await fetch(url, { headers: { Authorization: authHeader } });
+      if (!response.ok) throw new Error(`Kakao API error ${response.status}`);
+      return response.json();
+    };
+
+    // Fetch page 1 first to get total count
+    const firstData = await fetchPage(1);
+    const meta = firstData.meta || {};
+    const total = meta.pageable_count || 0;
+    const totalPages = Math.min(Math.ceil(total / 15), 3); // Kakao caps at 45 results
+
+    // Fetch remaining pages in parallel
+    let allDocuments = [...(firstData.documents || [])];
+    if (totalPages > 1) {
+      const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+      const pageResults = await Promise.all(remainingPages.map(fetchPage));
+      for (const pr of pageResults) {
+        allDocuments = allDocuments.concat(pr.documents || []);
+      }
+    }
+
+    // Filter out non-restaurant places
+    const results: RecommendResult[] = allDocuments
       .filter((item: any) => {
         const name = item.place_name || '';
         const cat = item.category_name || '';
-        // Exclude by name
         if (excludeKeywords.some((kw) => name.includes(kw))) return false;
-        // Exclude by category subcategory
         if (excludeCategories.some((ec) => cat.includes(ec))) return false;
         return true;
       })
@@ -76,10 +81,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         source: 'kakao' as const,
       }));
 
-    // Try to enrich with Naver thumbnails (non-blocking, best-effort)
+    // Enrich with thumbnails (best-effort)
     const enriched = await enrichWithThumbnails(results);
 
-    return res.status(200).json({ results: enriched, total, page, totalPages });
+    return res.status(200).json({ results: enriched, total: enriched.length });
   } catch (error: any) {
     console.error('Recommend API error:', error.message);
     return res.status(500).json({ error: 'Failed to fetch recommendations', message: error.message });
