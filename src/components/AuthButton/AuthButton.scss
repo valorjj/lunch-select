@@ -118,6 +118,10 @@
       &::before { content: "G "; color: #4285F4; font-weight: 700; }
     }
 
+    &--github {
+      font-weight: 600;
+    }
+
     &--naver {
       font-weight: 600;
       &::before { content: "N "; color: #1EC800; font-weight: 700; }
