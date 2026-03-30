@@ -87,45 +87,69 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function enrichWithThumbnails(results: RecommendResult[]): Promise<RecommendResult[]> {
-  // Batch search top results on Naver GraphQL for thumbnails
-  // Do max 3 concurrent lookups to keep latency low
-  const toEnrich = results.slice(0, 6);
-
-  const promises = toEnrich.map(async (r) => {
-    try {
-      const body = {
-        operationName: 'getRestaurants',
-        variables: {
-          input: { query: r.name, display: 1, start: 1, deviceType: 'pcmap' },
-        },
-        query: `query getRestaurants($input: RestaurantListInput) {
-          restaurantList(input: $input) {
-            items { id name imageUrl }
-          }
-        }`,
-      };
-
-      const resp = await fetch('https://pcmap-api.place.naver.com/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': '*/*',
-          'Accept-Language': 'ko',
-          'Origin': 'https://pcmap.place.naver.com',
-          'Referer': 'https://pcmap.place.naver.com/',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!resp.ok) return r;
-      const data = await resp.json();
-      const imageUrl = data?.data?.restaurantList?.items?.[0]?.imageUrl;
-      if (imageUrl) return { ...r, imageUrl };
-    } catch { /* ignore */ }
-    return r;
+  // Enrich all results with thumbnails in parallel
+  const promises = results.map(async (r) => {
+    // Try Kakao Place og:image first (exact match by ID), then Naver GraphQL
+    const imageUrl = await fetchKakaoOgImage(r.id) || await fetchNaverImageUrl(r);
+    return imageUrl ? { ...r, imageUrl } : r;
   });
 
-  const enrichedTop = await Promise.all(promises);
-  return [...enrichedTop, ...results.slice(6)];
+  return Promise.all(promises);
+}
+
+async function fetchKakaoOgImage(kakaoId: string): Promise<string | null> {
+  try {
+    const resp = await fetch(`https://place.map.kakao.com/${kakaoId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        'Accept': 'text/html',
+      },
+    });
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    // Extract og:image meta tag
+    const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+    if (match?.[1] && !match[1].includes('kakaomapapi')) {
+      return match[1];
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+async function fetchNaverImageUrl(r: RecommendResult): Promise<string | null> {
+  try {
+    // Extract dong name from address for better accuracy
+    const dongMatch = r.address.match(/(\S+동)\b/);
+    const query = dongMatch ? `${r.name} ${dongMatch[1]}` : r.name;
+
+    const body = {
+      operationName: 'getRestaurants',
+      variables: {
+        input: { query, display: 1, start: 1, deviceType: 'pcmap' },
+      },
+      query: `query getRestaurants($input: RestaurantListInput) {
+        restaurantList(input: $input) {
+          items { id name imageUrl }
+        }
+      }`,
+    };
+
+    const resp = await fetch('https://pcmap-api.place.naver.com/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+        'Accept-Language': 'ko',
+        'Origin': 'https://pcmap.place.naver.com',
+        'Referer': 'https://pcmap.place.naver.com/',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data?.data?.restaurantList?.items?.[0]?.imageUrl || null;
+  } catch { /* ignore */ }
+  return null;
 }
