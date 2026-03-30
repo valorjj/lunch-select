@@ -1,0 +1,19 @@
+{
+  "name": "점심 뭐 먹지?",
+  "short_name": "점뭐먹",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#ff6d2d",
+  "background_color": "#f6f7f6",
+  "display": "standalone"
+}

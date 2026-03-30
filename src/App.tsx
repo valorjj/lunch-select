@@ -138,10 +138,10 @@ function App() {
             <AuthButton user={user} isLoading={authLoading} onLogin={login} onLogout={logout} />
           </div>
         </div>
-        <h1
-          className="app__logo"
-          onClick={() => { setWinner(null); setRestaurantPhase('input'); setCafePhase('input'); }}
-        >{headerTitle}</h1>
+        <div className="app__logo-row" onClick={() => { setWinner(null); setRestaurantPhase('input'); setCafePhase('input'); }}>
+          <img className="app__logo-img" src="/logo.png" alt="점심 뭐 먹지?" />
+          <h1 className="app__logo">{headerTitle}</h1>
+        </div>
         <p>{headerDesc}</p>
       </header>
 

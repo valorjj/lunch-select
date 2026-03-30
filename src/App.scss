@@ -85,12 +85,6 @@
       font-weight: 700;
       color: var(--color-text);
       margin: 0;
-      cursor: pointer;
-      transition: opacity 0.2s;
-
-      &:hover {
-        opacity: 0.8;
-      }
 
       span {
         color: var(--color-primary);
@@ -102,6 +96,22 @@
       color: var(--color-text-muted);
       margin: 0.5rem 0 0;
     }
+  }
+
+  &__logo-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:hover { opacity: 0.85; }
+  }
+
+  &__logo-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
   }
 
   &__content {
@@ -214,6 +224,7 @@
 
       h1 { font-size: 1.5rem; }
       p { font-size: 0.85rem; }
+      .app__logo-img { width: 36px; height: 36px; }
     }
 
     &__content {
