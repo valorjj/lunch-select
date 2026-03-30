@@ -49,18 +49,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const total = meta.pageable_count || 0;
     const totalPages = Math.ceil(total / 15);
 
-    const results: RecommendResult[] = (data.documents || []).map((item: any) => ({
-      id: item.id || '',
-      name: item.place_name || '',
-      category: item.category_name || '',
-      address: item.address_name || '',
-      roadAddress: item.road_address_name || '',
-      lat: parseFloat(item.y) || 0,
-      lng: parseFloat(item.x) || 0,
-      phone: item.phone || '',
-      distance: parseInt(item.distance) || 0,
-      source: 'kakao' as const,
-    }));
+    // Filter out non-restaurant places (karaoke, bars, bakeries, etc.)
+    const excludeKeywords = ['노래방', '노래연습', '코인노래', '룸카페', 'PC방', '피씨방'];
+    const excludeCategories = ['술집', '호프', '요리주점', '일본식주점', '바(BAR)'];
+
+    const results: RecommendResult[] = (data.documents || [])
+      .filter((item: any) => {
+        const name = item.place_name || '';
+        const cat = item.category_name || '';
+        // Exclude by name
+        if (excludeKeywords.some((kw) => name.includes(kw))) return false;
+        // Exclude by category subcategory
+        if (excludeCategories.some((ec) => cat.includes(ec))) return false;
+        return true;
+      })
+      .map((item: any) => ({
+        id: item.id || '',
+        name: item.place_name || '',
+        category: item.category_name || '',
+        address: item.address_name || '',
+        roadAddress: item.road_address_name || '',
+        lat: parseFloat(item.y) || 0,
+        lng: parseFloat(item.x) || 0,
+        phone: item.phone || '',
+        distance: parseInt(item.distance) || 0,
+        source: 'kakao' as const,
+      }));
 
     // Try to enrich with Naver thumbnails (non-blocking, best-effort)
     const enriched = await enrichWithThumbnails(results);

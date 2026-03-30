@@ -25,7 +25,7 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
   const [results, setResults] = useState<RecommendResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [budget, setBudget] = useState(15000);
+  const [budget, setBudget] = useState(20000);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -114,14 +114,14 @@ export function RecommendTab({ onSelect }: RecommendTabProps) {
           type="range"
           className="recommend-tab__slider"
           min={5000}
-          max={20000}
+          max={50000}
           step={1000}
           value={budget}
           onChange={(e) => setBudget(Number(e.target.value))}
         />
         <div className="recommend-tab__budget-range">
           <span>5,000원</span>
-          <span>20,000원</span>
+          <span>50,000원</span>
         </div>
       </div>
 
