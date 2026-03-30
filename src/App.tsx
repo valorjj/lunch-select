@@ -110,7 +110,7 @@ function App() {
         <div className="app__header-top">
           <VisitorCounter />
           <div className="app__header-right">
-            <button className="app__arch-btn" onClick={() => setShowArch(true)} title="Architecture">&#9881;</button>
+            <button className="app__arch-btn" onClick={() => setShowArch(true)}>Architecture</button>
             {user && (user as any).isAdmin && (
               <button className="app__admin-btn" onClick={() => setShowAdmin(true)}>Admin</button>
             )}
