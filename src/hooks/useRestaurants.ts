@@ -110,7 +110,7 @@ export function useRestaurants(storageKey: string = 'lunch-select-restaurants'):
       name: result.name,
       category: result.category,
       menuItems: [],
-      thumbnail: '',
+      thumbnail: result.imageUrl || '',
       address: result.address,
       roadAddress: result.roadAddress,
       lat: result.lat,

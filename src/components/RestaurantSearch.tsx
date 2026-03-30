@@ -273,6 +273,11 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
                 const isAdded = addedIds.has(result.id);
                 return viewMode === 'list' ? (
                   <div key={result.id} className="restaurant-search__item">
+                    {result.imageUrl && (
+                      <div className="restaurant-search__item-thumb">
+                        <img src={result.imageUrl} alt="" loading="lazy" />
+                      </div>
+                    )}
                     <div className="restaurant-search__item-body">
                       <div className="restaurant-search__item-name">{result.name}</div>
                       <div className="restaurant-search__item-meta">
@@ -294,6 +299,11 @@ export function RestaurantSearch({ onSelect, disabled, placeholder }: Restaurant
                   </div>
                 ) : (
                   <div key={result.id} className="restaurant-search__card">
+                    {result.imageUrl && (
+                      <div className="restaurant-search__card-thumb">
+                        <img src={result.imageUrl} alt="" loading="lazy" />
+                      </div>
+                    )}
                     <div className="restaurant-search__card-body">
                       <div className="restaurant-search__card-name">{result.name}</div>
                       {result.category && (

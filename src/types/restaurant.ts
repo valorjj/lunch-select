@@ -16,6 +16,7 @@ export interface SearchResult {
   phone: string;
   naverMapUrl: string;
   source?: 'kakao' | 'naver';
+  imageUrl?: string;
 }
 
 export interface Restaurant {

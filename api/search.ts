@@ -10,6 +10,7 @@ interface SearchResult {
   lng: number;
   phone: string;
   naverMapUrl: string;
+  imageUrl?: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -118,6 +119,7 @@ async function searchNaverMap(
     naverMapUrl: item.id
       ? `https://map.naver.com/p/entry/place/${item.id}`
       : `https://map.naver.com/p/search/${encodeURIComponent(item.name || '')}`,
+    imageUrl: item.imageUrl || undefined,
   }));
 
   return { results, total, page, totalPages };
