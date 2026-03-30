@@ -13,7 +13,7 @@ interface User {
 interface UseAuthReturn {
   user: User | null;
   isLoading: boolean;
-  login: (provider: 'google' | 'naver') => void;
+  login: (provider: 'google' | 'naver' | 'github') => void;
   logout: () => void;
 }
 
@@ -54,7 +54,7 @@ export function useAuth(): UseAuthReturn {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = useCallback((provider: 'google' | 'naver') => {
+  const login = useCallback((provider: 'google' | 'naver' | 'github') => {
     window.location.href = `${API_BASE}/oauth2/authorization/${provider}`;
   }, []);
 

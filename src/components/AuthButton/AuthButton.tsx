@@ -12,7 +12,7 @@ interface User {
 interface AuthButtonProps {
   user: User | null;
   isLoading: boolean;
-  onLogin: (provider: 'google' | 'naver') => void;
+  onLogin: (provider: 'google' | 'naver' | 'github') => void;
   onLogout: () => void;
 }
 
@@ -73,6 +73,12 @@ export function AuthButton({ user, isLoading, onLogin, onLogout }: AuthButtonPro
             onClick={() => onLogin('google')}
           >
             Google 로그인
+          </button>
+          <button
+            className="auth-button__menu-item auth-button__menu-item--github"
+            onClick={() => onLogin('github')}
+          >
+            GitHub 로그인
           </button>
         </div>
       )}
