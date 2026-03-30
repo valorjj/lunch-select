@@ -14,15 +14,25 @@ interface RecommendResult {
   source: 'kakao';
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const lat = parseFloat(req.query.lat as string);
-  const lng = parseFloat(req.query.lng as string);
-  const radius = Math.min(3000, Math.max(100, parseInt(req.query.radius as string) || 1000));
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+// Shift coordinates by a random offset (50~150m) to get different results each search
+function jitterCoords(lat: number, lng: number): { lat: number; lng: number } {
+  // ~0.001 degree ≈ 111m at Seoul's latitude
+  const offsetLat = (Math.random() - 0.5) * 0.003; // ±150m
+  const offsetLng = (Math.random() - 0.5) * 0.003;
+  return { lat: lat + offsetLat, lng: lng + offsetLng };
+}
 
-  if (isNaN(lat) || isNaN(lng)) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const rawLat = parseFloat(req.query.lat as string);
+  const rawLng = parseFloat(req.query.lng as string);
+  const radius = Math.min(3000, Math.max(100, parseInt(req.query.radius as string) || 1000));
+
+  if (isNaN(rawLat) || isNaN(rawLng)) {
     return res.status(400).json({ error: 'lat, lng 파라미터가 필요합니다.' });
   }
+
+  // Jitter coordinates slightly for variety on repeated searches
+  const { lat, lng } = jitterCoords(rawLat, rawLng);
 
   const kakaoRestKey = process.env.KAKAO_REST_API_KEY;
   const kakaoAdminKey = process.env.KAKAO_ADMIN_KEY;
