@@ -66,6 +66,7 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
+  const [menuModal, setMenuModal] = useState<{ name: string; items: { name: string; price: number | null }[]; loading: boolean; error: string | null } | null>(null);
   const activeLocation = locationMode === 'gps' ? gpsLocation : selectedPreset;
 
   // Extract cuisine type from Kakao category string (e.g., "음식점 > 한식 > 찌개" → "한식")
@@ -114,6 +115,23 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
     if (activeLocation) {
       setHasFetched(true);
       fetchRecommendations(activeLocation.lat, activeLocation.lng);
+    }
+  };
+
+  const handleFetchMenu = async (r: RecommendResult) => {
+    setMenuModal({ name: r.name, items: [], loading: true, error: null });
+    try {
+      const apiUrl = `/api/place?name=${encodeURIComponent(r.name)}&address=${encodeURIComponent(r.roadAddress || r.address || '')}`;
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (data.menuItems?.length > 0) {
+        setMenuModal({ name: r.name, items: data.menuItems, loading: false, error: null });
+      } else {
+        setMenuModal({ name: r.name, items: [], loading: false, error: '\uB4F1\uB85D\uB41C \uBA54\uB274\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.' });
+      }
+    } catch {
+      setMenuModal({ name: r.name, items: [], loading: false, error: '\uBA54\uB274 \uC815\uBCF4\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.' });
     }
   };
 
@@ -360,13 +378,35 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
                       </span>
                     )}
                   </div>
-                  <button
-                    className={`recommend-tab__card-add ${isAdded ? 'recommend-tab__card-add--added' : ''}`}
-                    onClick={() => handleSelect(r)}
-                    disabled={isAdded}
-                  >
-                    {isAdded ? '\uCD94\uAC00\uB428' : '+ \uAC8C\uC784\uC5D0 \uCD94\uAC00'}
-                  </button>
+                  <div className="recommend-tab__card-actions">
+                    <a
+                      className="recommend-tab__card-action"
+                      href={`https://map.kakao.com/link/map/${encodeURIComponent(r.name)},${r.lat},${r.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      {'\uC9C0\uB3C4'}
+                    </a>
+                    <button
+                      className="recommend-tab__card-action"
+                      onClick={() => handleFetchMenu(r)}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 3h18v18H3z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
+                      </svg>
+                      {'\uBA54\uB274'}
+                    </button>
+                    <button
+                      className={`recommend-tab__card-action recommend-tab__card-action--primary ${isAdded ? 'recommend-tab__card-action--added' : ''}`}
+                      onClick={() => handleSelect(r)}
+                      disabled={isAdded}
+                    >
+                      {isAdded ? '\uCD94\uAC00\uB428' : '+ \uCD94\uAC00'}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -403,6 +443,37 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
           <button className="recommend-tab__permission-btn" onClick={() => setShowSubwayModal(true)}>
             {'\uC9C0\uD558\uCCA0\uC5ED \uC120\uD0DD\uD558\uAE30'}
           </button>
+        </div>
+      )}
+
+      {/* Menu modal */}
+      {menuModal && (
+        <div className="recommend-tab__modal-overlay" onClick={() => setMenuModal(null)}>
+          <div className="recommend-tab__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="recommend-tab__modal-header">
+              <h3>{menuModal.name}</h3>
+              <button onClick={() => setMenuModal(null)}>&times;</button>
+            </div>
+            {menuModal.loading && (
+              <div className="recommend-tab__modal-loading">
+                <div className="recommend-tab__spinner" />
+                <span>{'\uBA54\uB274\uB97C \uBD88\uB7EC\uC624\uB294 \uC911...'}</span>
+              </div>
+            )}
+            {menuModal.error && (
+              <div className="recommend-tab__modal-error">{menuModal.error}</div>
+            )}
+            {menuModal.items.length > 0 && (
+              <ul className="recommend-tab__modal-menu">
+                {menuModal.items.map((item, i) => (
+                  <li key={i}>
+                    <span>{item.name}</span>
+                    <span>{item.price !== null ? new Intl.NumberFormat('ko-KR').format(item.price) + '\uC6D0' : '-'}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 
