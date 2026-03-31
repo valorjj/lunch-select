@@ -199,12 +199,25 @@ export function WordGame() {
 
     if (statuses.every((s) => s === 'correct')) {
       setGameStatus('won');
-      setMessage(`정답! "${solution}" 맞았습니다!`);
+      setMessage(`정답! "${solution}" 맞았습니다! (Space로 새 게임)`);
     } else if (newGuesses.length >= MAX_ATTEMPTS) {
       setGameStatus('lost');
-      setMessage(`아쉽네요! 정답은 "${solution}" 이었습니다.`);
+      setMessage(`아쉽네요! 정답은 "${solution}" (Space로 새 게임)`);
     }
   }, [gameStatus, currentGuess, jamoLength, solutionJamos, guesses, solution]);
+
+  // Shortcut: Space or Enter to start new game when game is over
+  useEffect(() => {
+    if (gameStatus === 'playing') return;
+    const handleNewGameShortcut = (e: KeyboardEvent) => {
+      if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        startNewGame();
+      }
+    };
+    window.addEventListener('keydown', handleNewGameShortcut);
+    return () => window.removeEventListener('keydown', handleNewGameShortcut);
+  }, [gameStatus, startNewGame]);
 
   return (
     <div className="word-game">
