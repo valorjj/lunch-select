@@ -137,11 +137,12 @@ export function WordGame() {
       const words = wordList[count] || [];
       if (words.length > 0) {
         setSolution(pickRandomWord(words));
-        setGuesses([]);
-        setCurrentGuess([]);
-        setGameStatus('playing');
-        setMessage(null);
       }
+      // Always ensure game is in playing state after backend load
+      setGuesses([]);
+      setCurrentGuess([]);
+      setGameStatus('playing');
+      setMessage(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backendLoaded]);
