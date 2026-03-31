@@ -392,111 +392,122 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
       )}
 
       {tab === 'words' && <>
-      {/* Add word */}
-      <div className="admin-panel__add">
-        <div className="admin-panel__add-row">
-          <input
-            type="text"
-            value={newWord}
-            onChange={(e) => setNewWord(e.target.value)}
-            placeholder="새 단어 입력"
-            className="admin-panel__input"
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
-          />
-          <select value={newTheme} onChange={(e) => setNewTheme(e.target.value)} className="admin-panel__select">
-            <option value="food">음식</option>
-            <option value="general">일반</option>
-          </select>
-          {newWord.trim() && (
-            <span className="admin-panel__auto-count">{newWord.trim().length}글자</span>
-          )}
-          <button className="admin-panel__btn admin-panel__btn--primary" onClick={handleAdd}>추가</button>
-        </div>
-        <button className="admin-panel__btn admin-panel__btn--text" onClick={() => setShowBulk(!showBulk)}>
-          {showBulk ? '접기' : '일괄 추가'}
-        </button>
-        {showBulk && (
-          <div className="admin-panel__bulk">
-            <textarea
-              value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
-              placeholder="쉼표 또는 줄바꿈으로 구분 (글자수 자동 감지)&#10;예: 비빔밥, 떡볶이, 삼겹살"
-              className="admin-panel__textarea"
-              rows={4}
-            />
-            <button className="admin-panel__btn admin-panel__btn--primary" onClick={handleBulkAdd}>
-              일괄 추가 ({bulkText.split(/[,\n]/).filter(w => w.trim()).length}개)
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Filters */}
-      <div className="admin-panel__filters">
-        <div className="admin-panel__filter-group">
-          {['all', 'food', 'general'].map(t => (
-            <button
-              key={t}
-              className={`admin-panel__filter ${filterTheme === t ? 'admin-panel__filter--active' : ''}`}
-              onClick={() => setFilterTheme(t)}
-            >
-              {t === 'all' ? '전체' : t === 'food' ? '음식' : '일반'}
-            </button>
-          ))}
-        </div>
-        <div className="admin-panel__filter-group">
-          <button
-            className={`admin-panel__filter ${filterSyllable === null ? 'admin-panel__filter--active' : ''}`}
-            onClick={() => setFilterSyllable(null)}
-          >전체</button>
-          {[2, 3, 4, 5].map(n => (
-            <button
-              key={n}
-              className={`admin-panel__filter ${filterSyllable === n ? 'admin-panel__filter--active' : ''}`}
-              onClick={() => setFilterSyllable(n)}
-            >{n}글자</button>
-          ))}
-        </div>
-        <span className="admin-panel__count">
-          {activeCount}개 활성 / {filtered.length}개 전체
-        </span>
-        {filtered.length > 0 && (
-          <button className="admin-panel__btn admin-panel__btn--small admin-panel__btn--danger" onClick={handleDeleteAll}>
-            전체 삭제
+      {/* Add word card */}
+      <div className="admin-panel__card">
+        <div className="admin-panel__card-header">
+          <h3>단어 추가</h3>
+          <button className="admin-panel__btn admin-panel__btn--text" onClick={() => setShowBulk(!showBulk)}>
+            {showBulk ? '접기' : '일괄 추가'}
           </button>
-        )}
+        </div>
+        <div className="admin-panel__card-body">
+          <div className="admin-panel__add-row">
+            <input
+              type="text"
+              value={newWord}
+              onChange={(e) => setNewWord(e.target.value)}
+              placeholder="새 단어 입력"
+              className="admin-panel__input"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+            />
+            <select value={newTheme} onChange={(e) => setNewTheme(e.target.value)} className="admin-panel__select">
+              <option value="food">음식</option>
+              <option value="general">일반</option>
+            </select>
+            {newWord.trim() && (
+              <span className="admin-panel__auto-count">{newWord.trim().length}글자</span>
+            )}
+            <button className="admin-panel__btn admin-panel__btn--primary" onClick={handleAdd}>추가</button>
+          </div>
+          {showBulk && (
+            <div className="admin-panel__bulk">
+              <textarea
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder="쉼표 또는 줄바꿈으로 구분 (글자수 자동 감지)&#10;예: 비빔밥, 떡볶이, 삼겹살"
+                className="admin-panel__textarea"
+                rows={3}
+              />
+              <button className="admin-panel__btn admin-panel__btn--primary" onClick={handleBulkAdd}>
+                일괄 추가 ({bulkText.split(/[,\n]/).filter(w => w.trim()).length}개)
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Word list */}
-      <div className="admin-panel__list">
-        {loading ? (
-          <div className="admin-panel__loading">로딩 중...</div>
-        ) : filtered.length === 0 ? (
-          <div className="admin-panel__empty">등록된 단어가 없습니다</div>
-        ) : (
-          filtered.map(w => (
-            <div key={w.id} className={`admin-panel__word ${!w.active ? 'admin-panel__word--inactive' : ''}`}>
-              <span className="admin-panel__word-text">{w.word}</span>
-              <span className="admin-panel__word-meta">
-                {w.theme === 'food' ? '음식' : '일반'} · {w.syllableCount}글자
-              </span>
-              <div className="admin-panel__word-actions">
-                <button
-                  className={`admin-panel__btn admin-panel__btn--small ${w.active ? 'admin-panel__btn--warn' : 'admin-panel__btn--success'}`}
-                  onClick={() => handleToggle(w)}
-                >
-                  {w.active ? '비활성' : '활성화'}
-                </button>
-                <button
-                  className="admin-panel__btn admin-panel__btn--small admin-panel__btn--danger"
-                  onClick={() => handleDelete(w)}
-                >
-                  삭제
-                </button>
+      {/* Word table card */}
+      <div className="admin-panel__card">
+        <div className="admin-panel__toolbar">
+          <div className="admin-panel__filter-group">
+            {['all', 'food', 'general'].map(t => (
+              <button
+                key={t}
+                className={`admin-panel__filter ${filterTheme === t ? 'admin-panel__filter--active' : ''}`}
+                onClick={() => setFilterTheme(t)}
+              >
+                {t === 'all' ? '전체' : t === 'food' ? '음식' : '일반'}
+              </button>
+            ))}
+          </div>
+          <div className="admin-panel__filter-group">
+            <button
+              className={`admin-panel__filter ${filterSyllable === null ? 'admin-panel__filter--active' : ''}`}
+              onClick={() => setFilterSyllable(null)}
+            >전체</button>
+            {[2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                className={`admin-panel__filter ${filterSyllable === n ? 'admin-panel__filter--active' : ''}`}
+                onClick={() => setFilterSyllable(n)}
+              >{n}글자</button>
+            ))}
+          </div>
+          <span className="admin-panel__count">
+            <strong>{activeCount}</strong> 활성 / {filtered.length} 전체
+          </span>
+          {filtered.length > 0 && (
+            <button className="admin-panel__btn admin-panel__btn--small admin-panel__btn--danger" onClick={handleDeleteAll}>
+              전체 삭제
+            </button>
+          )}
+        </div>
+
+        <div className="admin-panel__table">
+          {loading ? (
+            <div className="admin-panel__loading">로딩 중...</div>
+          ) : filtered.length === 0 ? (
+            <div className="admin-panel__empty">등록된 단어가 없습니다</div>
+          ) : (
+            filtered.map(w => (
+              <div key={w.id} className={`admin-panel__table-row ${!w.active ? 'admin-panel__table-row--inactive' : ''}`}>
+                <span className="admin-panel__cell-word">{w.word}</span>
+                <div className="admin-panel__cell-meta">
+                  <span className="admin-panel__cell-tag admin-panel__cell-tag--theme">
+                    {w.theme === 'food' ? '음식' : '일반'}
+                  </span>
+                  <span className="admin-panel__cell-tag admin-panel__cell-tag--count">
+                    {w.syllableCount}글자
+                  </span>
+                </div>
+                <div className="admin-panel__cell-actions">
+                  <button
+                    className={`admin-panel__btn admin-panel__btn--small ${w.active ? 'admin-panel__btn--warn' : 'admin-panel__btn--success'}`}
+                    onClick={() => handleToggle(w)}
+                  >
+                    {w.active ? '비활성' : '활성화'}
+                  </button>
+                  <button
+                    className="admin-panel__btn admin-panel__btn--small admin-panel__btn--danger"
+                    onClick={() => handleDelete(w)}
+                  >
+                    삭제
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
       </>}
       </div>
