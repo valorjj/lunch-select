@@ -102,14 +102,6 @@ function App() {
     <>카페 <span>어디 갈까?</span></>
   );
 
-  const headerDesc = isGame
-    ? '한글 단어를 맞혀보세요!'
-    : isRecommend
-    ? '현재 위치 기반으로 주변 맛집을 추천해드려요'
-    : isRestaurant
-    ? '음식점 이름을 검색해서 추가하세요'
-    : '카페 이름을 검색해서 추가하세요';
-
   const searchPlaceholder = isRestaurant
     ? '음식점 이름으로 검색하세요 (예: 역삼 김치찌개)'
     : '카페 이름으로 검색하세요 (예: 역삼 스타벅스)';
