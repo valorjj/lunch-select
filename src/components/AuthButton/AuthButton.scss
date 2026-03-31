@@ -112,15 +112,19 @@
     &:hover {
       background: rgba(0, 0, 0, 0.04);
     }
+  }
 
-    &--google {
-      font-weight: 600;
-      &::before { content: "G "; color: #4285F4; font-weight: 700; }
-    }
+  &__provider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
 
-    &--github {
-      font-weight: 600;
-    }
+  &__provider-icon {
+    flex-shrink: 0;
+    display: block;
+
 
     &--naver {
       font-weight: 600;
