@@ -127,9 +127,10 @@ export function WordGame() {
     [currentWordList]
   );
 
-  // Auto-start game once backend words are loaded
+  // Auto-start game once backend words are loaded — but only if user hasn't started playing
+  const hasStartedPlaying = guesses.length > 0 || currentGuess.length > 0;
   useEffect(() => {
-    if (backendLoaded) {
+    if (backendLoaded && !hasStartedPlaying) {
       const wordList = getWordList(theme, remoteWords, true);
       const counts = [2, 3, 4, 5].filter((n) => (wordList[n] || []).length > 0);
       const count = counts.includes(syllableCount) ? syllableCount : counts[0] || 2;
@@ -138,9 +139,6 @@ export function WordGame() {
       if (words.length > 0) {
         setSolution(pickRandomWord(words));
       }
-      // Always ensure game is in playing state after backend load
-      setGuesses([]);
-      setCurrentGuess([]);
       setGameStatus('playing');
       setMessage(null);
     }
