@@ -38,16 +38,9 @@ interface JamoKeyboardProps {
 
 export function JamoKeyboard({ onChar, onEnter, onDelete, keyStatuses, disabled }: JamoKeyboardProps) {
   const [shifted, setShifted] = useState(false);
-  const [inputLang, setInputLang] = useState<'en' | 'ko' | null>(null);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (disabled) return;
-
-    // Detect input language from the key
-    if (e.key.length === 1) {
-      if (/[a-zA-Z]/.test(e.key)) setInputLang('en');
-      else if (ALL_JAMO.has(e.key)) setInputLang('ko');
-    }
 
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -74,7 +67,6 @@ export function JamoKeyboard({ onChar, onEnter, onDelete, keyStatuses, disabled 
     const inputEvent = e as InputEvent;
     const data = inputEvent.data;
     if (data && ALL_JAMO.has(data)) {
-      setInputLang('ko');
       onChar(data);
     }
   }, [onChar, disabled]);
@@ -117,14 +109,6 @@ export function JamoKeyboard({ onChar, onEnter, onDelete, keyStatuses, disabled 
 
   return (
     <div className="word-game__keyboard">
-      {/* Input language indicator */}
-      {inputLang && (
-        <div className={`word-game__input-lang ${inputLang === 'ko' ? 'word-game__input-lang--warn' : ''}`}>
-          {inputLang === 'en'
-            ? '영문 입력 모드 (권장)'
-            : '한글 입력 모드 — 영문 모드로 전환하세요'}
-        </div>
-      )}
       <div className="word-game__keyboard-row">
         {row1.map(renderKey)}
       </div>
