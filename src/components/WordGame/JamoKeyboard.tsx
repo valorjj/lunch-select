@@ -9,7 +9,14 @@ const ROW1_SHIFT = ['ㅃ', 'ㅉ', 'ㄸ', 'ㄲ', 'ㅆ', 'ㅛ', 'ㅕ', 'ㅑ', 'ㅒ
 const ROW2_SHIFT = ['ㅁ', 'ㄴ', 'ㅇ', 'ㄹ', 'ㅎ', 'ㅘ', 'ㅝ', 'ㅏ', 'ㅣ'];
 const ROW3_SHIFT = ['ㅋ', 'ㅌ', 'ㅊ', 'ㅍ', 'ㅠ', 'ㅟ', 'ㅢ'];
 
-// Map physical keyboard keys to jamo (standard Korean keyboard layout)
+// All valid jamo for direct Korean IME input
+const ALL_JAMO = new Set([
+  ...ROW1, ...ROW2, ...ROW3,
+  ...ROW1_SHIFT, ...ROW2_SHIFT, ...ROW3_SHIFT,
+  'ㅃ', 'ㅉ', 'ㄸ', 'ㄲ', 'ㅆ', 'ㅒ', 'ㅖ', 'ㅘ', 'ㅝ', 'ㅟ', 'ㅢ',
+]);
+
+// Map physical keyboard English keys to jamo (standard Korean keyboard layout)
 const KEY_MAP: Record<string, string> = {
   'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ',
   'y': 'ㅛ', 'u': 'ㅕ', 'i': 'ㅑ', 'o': 'ㅐ', 'p': 'ㅔ',
@@ -31,22 +38,56 @@ interface JamoKeyboardProps {
 
 export function JamoKeyboard({ onChar, onEnter, onDelete, keyStatuses, disabled }: JamoKeyboardProps) {
   const [shifted, setShifted] = useState(false);
+  const [inputLang, setInputLang] = useState<'en' | 'ko' | null>(null);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (disabled) return;
+
+    // Detect input language from the key
+    if (e.key.length === 1) {
+      if (/[a-zA-Z]/.test(e.key)) setInputLang('en');
+      else if (ALL_JAMO.has(e.key)) setInputLang('ko');
+    }
+
     if (e.key === 'Enter') {
+      e.preventDefault();
       onEnter();
     } else if (e.key === 'Backspace') {
       onDelete();
+    } else if (e.key === 'Process' || e.isComposing) {
+      // Korean IME is composing — ignore keydown, handle in compositionend/input
+      return;
     } else if (KEY_MAP[e.key]) {
+      // English keyboard mode → map to jamo
+      e.preventDefault();
       onChar(KEY_MAP[e.key]);
+    } else if (ALL_JAMO.has(e.key)) {
+      // Korean keyboard mode → direct jamo input
+      e.preventDefault();
+      onChar(e.key);
     }
   }, [onChar, onEnter, onDelete, disabled]);
 
+  // Handle Korean IME composition
+  const handleInput = useCallback((e: Event) => {
+    if (disabled) return;
+    const inputEvent = e as InputEvent;
+    const data = inputEvent.data;
+    if (data && ALL_JAMO.has(data)) {
+      setInputLang('ko');
+      onChar(data);
+    }
+  }, [onChar, disabled]);
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+    // Listen for input events on the window to catch Korean IME
+    window.addEventListener('input', handleInput, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('input', handleInput, true);
+    };
+  }, [handleKeyDown, handleInput]);
 
   const row1 = shifted ? ROW1_SHIFT : ROW1;
   const row2 = shifted ? ROW2_SHIFT : ROW2;
@@ -76,6 +117,14 @@ export function JamoKeyboard({ onChar, onEnter, onDelete, keyStatuses, disabled 
 
   return (
     <div className="word-game__keyboard">
+      {/* Input language indicator */}
+      {inputLang && (
+        <div className={`word-game__input-lang ${inputLang === 'ko' ? 'word-game__input-lang--warn' : ''}`}>
+          {inputLang === 'en'
+            ? '영문 입력 모드 (권장)'
+            : '한글 입력 모드 — 영문 모드로 전환하세요'}
+        </div>
+      )}
       <div className="word-game__keyboard-row">
         {row1.map(renderKey)}
       </div>

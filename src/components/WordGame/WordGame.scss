@@ -166,6 +166,22 @@
     gap: 6px;
   }
 
+  &__input-lang {
+    text-align: center;
+    padding: 0.3rem 0.6rem;
+    margin-bottom: 0.25rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: rgba(var(--color-success-rgb), 0.1);
+    color: var(--color-success);
+
+    &--warn {
+      background: rgba(var(--color-error-rgb), 0.1);
+      color: var(--color-error);
+    }
+  }
+
   &__keyboard-row {
     display: flex;
     justify-content: center;
