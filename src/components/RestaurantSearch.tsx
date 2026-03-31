@@ -56,7 +56,6 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
   const [showResults, setShowResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [searchedQuery, setSearchedQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [history, setHistory] = useState<string[]>(loadHistory);
@@ -84,7 +83,6 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
     const searchQuery = areaPrefix ? `${areaPrefix} ${trimmed}` : trimmed;
     setIsSearching(true);
     setError(null);
-    setAddedIds(new Set());
     try {
       const data = await fetchPage(searchQuery, 1);
       setResults(data.results);
@@ -131,7 +129,6 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
 
   const handleSelect = (result: SearchResult) => {
     onSelect(result);
-    setAddedIds((prev) => new Set(prev).add(result.id));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -154,7 +151,6 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
     const trimmed = item.trim();
     setIsSearching(true);
     setError(null);
-    setAddedIds(new Set());
     fetchPage(trimmed, 1).then((data) => {
       setResults(data.results);
       setTotal(data.total);
@@ -386,7 +382,7 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
           {results.length > 0 && (
             <div className={`restaurant-search__results restaurant-search__results--${viewMode}`}>
               {results.map((result) => {
-                const isAdded = addedIds.has(result.id) || (existingIds?.has(result.id) ?? false);
+                const isAdded = existingIds?.has(result.id) ?? false;
                 const categoryParts = (result.category || '').split('>').map((s: string) => s.trim());
                 const cuisine = categoryParts.length > 1 ? categoryParts[1] || categoryParts[0] : categoryParts[0];
                 const detail = categoryParts.length > 2 ? categoryParts[categoryParts.length - 1] : '';

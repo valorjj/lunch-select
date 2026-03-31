@@ -62,7 +62,6 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [budget, setBudget] = useState(15000);
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
@@ -173,7 +172,6 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
 
   const handleSelect = (result: RecommendResult) => {
     onSelect(result);
-    setAddedIds((prev) => new Set(prev).add(result.id));
   };
 
   const locationLabel = locationMode === 'gps'
@@ -358,7 +356,7 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
           </div>
           <div className="recommend-tab__grid">
             {filteredResults.map((r) => {
-              const isAdded = addedIds.has(r.id) || (existingIds?.has(r.id) ?? false);
+              const isAdded = existingIds?.has(r.id) ?? false;
               return (
                 <div key={r.id} className="recommend-tab__card">
                   <div className="recommend-tab__card-top">
