@@ -386,17 +386,13 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
                       </span>
                     )}
                   </div>
-                  <div className="recommend-tab__card-maps">
-                    <a className="recommend-tab__map-btn recommend-tab__map-btn--naver" href={`nmap://place?lat=${r.lat}&lng=${r.lng}&name=${encodeURIComponent(r.name)}&appname=com.lunchselect`} onClick={(e) => { setTimeout(() => { window.open(`https://map.naver.com/p/search/${encodeURIComponent(r.name)}`, '_blank'); }, 500); }}>N</a>
-                    <a className="recommend-tab__map-btn recommend-tab__map-btn--kakao" href={`kakaomap://look?p=${r.lat},${r.lng}`} onClick={(e) => { setTimeout(() => { window.open(`https://map.kakao.com/link/map/${encodeURIComponent(r.name)},${r.lat},${r.lng}`, '_blank'); }, 500); }}>K</a>
-                    <a className="recommend-tab__map-btn recommend-tab__map-btn--tmap" href={`tmap://route?goalx=${r.lng}&goaly=${r.lat}&goalname=${encodeURIComponent(r.name)}`}>T</a>
-                  </div>
                   <div className="recommend-tab__card-actions">
+                    <MapDropdown name={r.name} lat={r.lat} lng={r.lng} />
                     <button
                       className="recommend-tab__card-action"
                       onClick={() => handleFetchMenu(r)}
                     >
-                      {'\uBA54\uB274 \uBCF4\uAE30'}
+                      {'\uBA54\uB274'}
                     </button>
                     <button
                       className={`recommend-tab__card-action recommend-tab__card-action--primary ${isAdded ? 'recommend-tab__card-action--added' : ''}`}
@@ -501,6 +497,35 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
 }
 
 // ── Subway Station Modal ──
+// ── Map Dropdown ──
+function MapDropdown({ name, lat, lng }: { name: string; lat: number; lng: number }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="recommend-tab__map-dropdown">
+      <button className="recommend-tab__card-action" onClick={() => setOpen(!open)}>
+        {'\uC9C0\uB3C4'}
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points={open ? '18 15 12 9 6 15' : '6 9 12 15 18 9'} />
+        </svg>
+      </button>
+      {open && (
+        <div className="recommend-tab__map-popup">
+          <a className="recommend-tab__map-popup-item" href={`nmap://place?lat=${lat}&lng=${lng}&name=${encodeURIComponent(name)}&appname=com.lunchselect`} onClick={() => { setTimeout(() => { window.open(`https://map.naver.com/p/search/${encodeURIComponent(name)}`, '_blank'); }, 500); }}>
+            <span className="recommend-tab__map-dot recommend-tab__map-dot--naver">N</span>{'\uB124\uC774\uBC84\uC9C0\uB3C4'}
+          </a>
+          <a className="recommend-tab__map-popup-item" href={`kakaomap://look?p=${lat},${lng}`} onClick={() => { setTimeout(() => { window.open(`https://map.kakao.com/link/map/${encodeURIComponent(name)},${lat},${lng}`, '_blank'); }, 500); }}>
+            <span className="recommend-tab__map-dot recommend-tab__map-dot--kakao">K</span>{'\uCE74\uCE74\uC624\uB9F5'}
+          </a>
+          <a className="recommend-tab__map-popup-item" href={`tmap://route?goalx=${lng}&goaly=${lat}&goalname=${encodeURIComponent(name)}`}>
+            <span className="recommend-tab__map-dot recommend-tab__map-dot--tmap">T</span>{'\uD2F0\uB9F5'}
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SubwayModal({
   onSelect,
   onClose,

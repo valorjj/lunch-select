@@ -389,39 +389,56 @@
     }
   }
 
-  &__card-maps {
-    display: flex;
-    gap: 0.3rem;
+  // Map dropdown
+  &__map-dropdown {
+    position: relative;
+    flex: 1;
   }
 
-  &__map-btn {
-    width: 28px;
-    height: 28px;
+  &__map-popup {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 20;
+    min-width: 130px;
+    animation: mapPopupIn 0.15s ease;
+  }
+
+  &__map-popup-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: background 0.1s;
+
+    &:hover {
+      background: rgba(var(--color-primary-rgb), 0.06);
+    }
+  }
+
+  &__map-dot {
+    width: 18px;
+    height: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
-    font-size: 0.7rem;
+    border-radius: 4px;
+    font-size: 0.6rem;
     font-weight: 800;
-    text-decoration: none;
-    transition: opacity 0.15s;
+    flex-shrink: 0;
 
-    &:hover { opacity: 0.8; }
-
-    &--naver {
-      background: #1EC800;
-      color: #fff;
-    }
-
-    &--kakao {
-      background: #FEE500;
-      color: #3C1E1E;
-    }
-
-    &--tmap {
-      background: #EF4436;
-      color: #fff;
-    }
+    &--naver { background: #1EC800; color: #fff; }
+    &--kakao { background: #FEE500; color: #3C1E1E; }
+    &--tmap { background: #EF4436; color: #fff; }
   }
 
   &__card-actions {
@@ -888,4 +905,9 @@
 
 @keyframes recommend-spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes mapPopupIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
