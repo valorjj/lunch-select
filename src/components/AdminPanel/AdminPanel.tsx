@@ -250,14 +250,11 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
   return (
     <div className="admin-panel">
       <GlobalLoader visible={busy} message={busyMessage} />
-      <h1 className="admin-panel__logo" onClick={onClose}>
-        점심 <span>뭐 먹지?</span>
-      </h1>
       <div className="admin-panel__header">
         <h2>Admin</h2>
         <div className="admin-panel__tabs">
-          <button className={`admin-panel__tab ${tab === 'words' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('words')}>단어 관리</button>
-          <button className={`admin-panel__tab ${tab === 'stats' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('stats')}>검색 통계</button>
+          <button className={`admin-panel__tab ${tab === 'words' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('words')}>단어</button>
+          <button className={`admin-panel__tab ${tab === 'stats' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('stats')}>통계</button>
           <button className={`admin-panel__tab ${tab === 'users' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('users')}>사용자</button>
           {isSuperAdmin && (
             <button className={`admin-panel__tab ${tab === 'admins' ? 'admin-panel__tab--active' : ''}`} onClick={() => setTab('admins')}>관리자</button>
@@ -266,6 +263,7 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
         <button className="admin-panel__close" onClick={onClose}>&times;</button>
       </div>
 
+      <div className="admin-panel__body">
       {message && <div className="admin-panel__message">{message}</div>}
 
       {tab === 'stats' && (
@@ -501,6 +499,7 @@ export function AdminPanel({ onClose, isSuperAdmin }: AdminPanelProps) {
         )}
       </div>
       </>}
+      </div>
     </div>
   );
 }
