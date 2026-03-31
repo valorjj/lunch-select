@@ -12,14 +12,39 @@
     padding: 0.75rem 1.5rem 0;
   }
 
+  &__header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   &__header-right {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  &__theme-btn,
-  &__arch-btn,
+  &__theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover {
+      background: rgba(var(--color-primary-rgb), 0.1);
+      color: var(--color-primary);
+    }
+
+    svg { display: block; }
+  }
+
   &__admin-btn {
     display: flex;
     align-items: center;
