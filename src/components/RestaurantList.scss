@@ -9,7 +9,7 @@
   }
 
   &__count {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--color-text-muted);
 
     strong {
@@ -40,7 +40,16 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  // Sticky game start bar
+  &__sticky-bar {
+    position: sticky;
+    bottom: 0;
+    padding: 0.75rem 0;
+    background: linear-gradient(to top, var(--color-background) 60%, transparent);
+    z-index: 10;
   }
 
   &__start-button {
@@ -48,16 +57,16 @@
     width: 100%;
     max-width: 400px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0.85rem 2rem;
     border: none;
-    border-radius: 16px;
+    border-radius: 14px;
     background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
     color: #fff;
-    font-size: 1.15rem;
+    font-size: 1rem;
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 16px rgba(var(--color-primary-rgb), 0.3);
 
     &:hover:not(:disabled) {
@@ -77,32 +86,20 @@
     }
   }
 
+  // Compact empty state
   &__empty {
     text-align: center;
-    padding: 3rem 1rem;
-  }
-
-  &__empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    padding: 2rem 1rem;
   }
 
   &__empty-text {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin: 0 0 0.5rem;
-  }
-
-  &__empty-hint {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--color-text-muted);
     margin: 0;
-    line-height: 1.5;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .restaurant-list {
     &__grid {
       grid-template-columns: 1fr;

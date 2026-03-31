@@ -118,20 +118,21 @@ function App() {
     <div className="app">
       <header className="app__header">
         <div className="app__header-top">
-          <VisitorCounter />
+          <div className="app__header-left">
+            <VisitorCounter />
+          </div>
           <div className="app__header-right">
             <button className="app__theme-btn" onClick={toggleTheme} title={theme === 'light' ? '다크 모드' : '라이트 모드'}>
               {theme === 'light' ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
               ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                 </svg>
               )}
             </button>
-            <button className="app__arch-btn" onClick={() => setShowArch(true)}>Architecture</button>
             {user && (user as any).isAdmin && (
               <button className="app__admin-btn" onClick={() => setShowAdmin(true)}>Admin</button>
             )}
@@ -142,7 +143,6 @@ function App() {
           <img className="app__logo-img" src="/logo.png" alt="점심 뭐 먹지?" />
           <h1 className="app__logo">{headerTitle}</h1>
         </div>
-        <p>{headerDesc}</p>
       </header>
 
       <main className="app__content">
@@ -247,6 +247,11 @@ function App() {
           </div>
         )}
       </main>
+      <footer className="app__footer">
+        <button className="app__footer-link" onClick={() => setShowArch(true)}>Architecture</button>
+        <span className="app__footer-sep">|</span>
+        <a className="app__footer-link" href="https://github.com/valorjj/lunch-select" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </footer>
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} isSuperAdmin={user?.email === 'valorjj@gmail.com'} />}
       {showArch && <ArchitectureModal onClose={() => setShowArch(false)} />}
     </div>

@@ -34,12 +34,8 @@ export function RestaurantList({ restaurants, onRemove, onStartGame, onClearAll,
   if (restaurants.length === 0) {
     return (
       <div className="restaurant-list__empty">
-        <div className="restaurant-list__empty-icon">{emptyIcon || '\uD83C\uDF5A'}</div>
         <p className="restaurant-list__empty-text">
-          {emptyText || '음식점을 검색해서 추가해보세요!'}
-        </p>
-        <p className="restaurant-list__empty-hint">
-          {emptyHint || '위 검색창에서 음식점 이름을 검색하세요'}
+          {emptyIcon || '\uD83C\uDF5A'} {emptyText || '음식점을 검색해서 추가해보세요!'}
         </p>
       </div>
     );
@@ -72,15 +68,17 @@ export function RestaurantList({ restaurants, onRemove, onStartGame, onClearAll,
         {isLoading && <SkeletonCard />}
       </div>
 
-      <button
-        className="restaurant-list__start-button"
-        onClick={onStartGame}
-        disabled={!canStartGame}
-      >
-        {canStartGame
-          ? '게임 시작!'
-          : `음식점을 ${APP_CONFIG.minRestaurants}개 이상 추가해주세요`}
-      </button>
+      <div className="restaurant-list__sticky-bar">
+        <button
+          className="restaurant-list__start-button"
+          onClick={onStartGame}
+          disabled={!canStartGame}
+        >
+          {canStartGame
+            ? `${restaurants.length}개 선택됨 — 게임 시작!`
+            : `음식점을 ${APP_CONFIG.minRestaurants}개 이상 추가해주세요`}
+        </button>
+      </div>
     </div>
   );
 }
