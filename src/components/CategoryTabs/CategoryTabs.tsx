@@ -1,7 +1,7 @@
 import React from 'react';
 import './CategoryTabs.scss';
 
-export type CategoryTab = 'restaurant' | 'cafe' | 'game' | 'recommend';
+export type CategoryTab = 'restaurant' | 'cafe' | 'recommend' | 'group' | 'game';
 
 interface CategoryTabsProps {
   activeTab: CategoryTab;
@@ -30,10 +30,16 @@ export function CategoryTabs({ activeTab, onTabChange }: CategoryTabsProps) {
         추천
       </button>
       <button
+        className={`category-tabs__tab ${activeTab === 'group' ? 'category-tabs__tab--active' : ''}`}
+        onClick={() => onTabChange('group')}
+      >
+        그룹
+      </button>
+      <button
         className={`category-tabs__tab ${activeTab === 'game' ? 'category-tabs__tab--active' : ''}`}
         onClick={() => onTabChange('game')}
       >
-        꼬들 게임
+        꼬들
       </button>
     </div>
   );

@@ -17,6 +17,7 @@ import { VisitorCounter } from './components/VisitorCounter/VisitorCounter';
 import { AdminPanel } from './components/AdminPanel/AdminPanel';
 import { ArchitectureModal } from './components/ArchitectureModal/ArchitectureModal';
 import { RecommendTab } from './components/RecommendTab/RecommendTab';
+import { GroupTab } from './components/GroupTab/GroupTab';
 import { useTheme } from './hooks/useTheme';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { decodeSharedResult } from './components/SharePanel/SharePanel';
@@ -61,6 +62,7 @@ function App() {
   const isRestaurant = activeTab === 'restaurant';
   const isGame = activeTab === 'game';
   const isRecommend = activeTab === 'recommend';
+  const isGroup = activeTab === 'group';
   const store = isRestaurant ? restaurantStore : cafeStore;
   const phase = isRestaurant ? restaurantPhase : cafePhase;
   const setPhase = isRestaurant ? setRestaurantPhase : setCafePhase;
@@ -96,6 +98,8 @@ function App() {
     <>꼬들 <span>게임</span></>
   ) : isRecommend ? (
     <>오늘 <span>뭐 먹지?</span></>
+  ) : isGroup ? (
+    <>점심 <span>그룹</span></>
   ) : isRestaurant ? (
     <>점심 <span>뭐 먹지?</span></>
   ) : (
@@ -163,7 +167,13 @@ function App() {
           </div>
         )}
 
-        {!isGame && !isRecommend && phase === 'input' && (
+        {isGroup && (
+          <div className="fade-in">
+            <GroupTab isLoggedIn={!!user} onLogin={login} />
+          </div>
+        )}
+
+        {!isGame && !isRecommend && !isGroup && phase === 'input' && (
           <div className="fade-in">
             <RestaurantSearch
               onSelect={store.addFromSearch}
@@ -193,7 +203,7 @@ function App() {
           </div>
         )}
 
-        {!isGame && !isRecommend && phase === 'game' && (
+        {!isGame && !isRecommend && !isGroup && phase === 'game' && (
           <div className="fade-in">
             <button className="app__back-button" onClick={handleBackToInput}>
               &#8592; 뒤로 가기
@@ -226,7 +236,7 @@ function App() {
           </div>
         )}
 
-        {!isGame && !isRecommend && phase === 'result' && winner && (
+        {!isGame && !isRecommend && !isGroup && phase === 'result' && winner && (
           <div className="fade-in">
             <ResultScreen
               winner={winner}
