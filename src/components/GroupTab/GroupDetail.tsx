@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useGroups, LunchGroup, GroupMember } from '../../hooks/useGroups';
 import { usePoll } from '../../hooks/usePoll';
 import { DailyPoll } from './DailyPoll';
+import { CoffeeRoulette } from '../CoffeeRoulette/CoffeeRoulette';
 
 interface GroupDetailProps {
   groupId: number;
@@ -15,6 +16,7 @@ export function GroupDetail({ groupId, groupsHook, onBack }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showRoulette, setShowRoulette] = useState(false);
   const pollHook = usePoll(groupId);
 
   const loadDetail = useCallback(async () => {
@@ -101,6 +103,20 @@ export function GroupDetail({ groupId, groupsHook, onBack }: GroupDetailProps) {
       )}
 
       <DailyPoll pollHook={pollHook} />
+
+      <div className="group-detail__coffee-section">
+        {showRoulette ? (
+          <CoffeeRoulette
+            participants={pollHook.poll?.attendance.map(a => a.name) || []}
+            groupId={groupId}
+            onClose={() => setShowRoulette(false)}
+          />
+        ) : (
+          <button className="group-detail__coffee-btn" onClick={() => setShowRoulette(true)}>
+            &#9749; &#45572;&#44032; &#49404;&#45208;?
+          </button>
+        )}
+      </div>
 
       <div className="group-detail__footer">
         {group.isOwner ? (
