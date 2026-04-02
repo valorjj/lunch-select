@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useGroups, LunchGroup, GroupMember } from '../../hooks/useGroups';
+import { useGroups, LunchGroup } from '../../hooks/useGroups';
 import { usePoll } from '../../hooks/usePoll';
 import { DailyPoll } from './DailyPoll';
 import { CoffeeRoulette } from '../CoffeeRoulette/CoffeeRoulette';
