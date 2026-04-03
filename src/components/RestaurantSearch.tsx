@@ -63,6 +63,14 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
   const [areaPrefix, setAreaPrefix] = useState('');
   const [areaMode, setAreaMode] = useState<'area' | 'gu' | 'subway'>('area');
   const [showSubwayModal, setShowSubwayModal] = useState(false);
+  const [menuModal, setMenuModal] = useState<{
+    name: string;
+    items: { name: string; price: number | null }[];
+    rating: number | null;
+    reviewCount: number | null;
+    loading: boolean;
+    error: string | null;
+  } | null>(null);
 
   const fetchPage = useCallback(async (searchQuery: string, page: number) => {
     const response = await fetch(
@@ -126,6 +134,26 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
       setIsSearching(false);
     }
   }, [searchedQuery, fetchPage]);
+
+  const handleFetchMenu = async (result: SearchResult) => {
+    setMenuModal({ name: result.name, items: [], rating: null, reviewCount: null, loading: true, error: null });
+    try {
+      const apiUrl = `/api/place?name=${encodeURIComponent(result.name)}&address=${encodeURIComponent(result.roadAddress || result.address || '')}`;
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setMenuModal({
+        name: data.name || result.name,
+        items: data.menuItems || [],
+        rating: data.rating ?? null,
+        reviewCount: data.reviewCount ?? null,
+        loading: false,
+        error: data.menuItems?.length > 0 ? null : '등록된 메뉴가 없습니다.',
+      });
+    } catch {
+      setMenuModal({ name: result.name, items: [], rating: null, reviewCount: null, loading: false, error: '메뉴 정보를 가져올 수 없습니다.' });
+    }
+  };
 
   const handleSelect = (result: SearchResult) => {
     onSelect(result);
@@ -398,13 +426,22 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
                         {result.roadAddress || result.address}
                       </span>
                     </div>
-                    <button
-                      className={`restaurant-search__item-add ${isAdded ? 'restaurant-search__item-add--added' : ''}`}
-                      onClick={() => handleSelect(result)}
-                      disabled={isAdded}
-                    >
-                      {isAdded ? '\u2713' : '+'}
-                    </button>
+                    <div className="restaurant-search__item-actions">
+                      <SearchMapDropdown name={result.name} lat={result.lat} lng={result.lng} />
+                      <button
+                        className="restaurant-search__action-btn"
+                        onClick={() => handleFetchMenu(result)}
+                      >
+                        메뉴
+                      </button>
+                      <button
+                        className={`restaurant-search__item-add ${isAdded ? 'restaurant-search__item-add--added' : ''}`}
+                        onClick={() => handleSelect(result)}
+                        disabled={isAdded}
+                      >
+                        {isAdded ? '\u2713' : '+'}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div key={result.id} className="restaurant-search__card">
@@ -419,13 +456,22 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
                         {result.roadAddress || result.address}
                       </div>
                     </div>
-                    <button
-                      className={`restaurant-search__card-add ${isAdded ? 'restaurant-search__card-add--added' : ''}`}
-                      onClick={() => handleSelect(result)}
-                      disabled={isAdded}
-                    >
-                      {isAdded ? '\uCD94\uAC00\uB428' : '+ \uCD94\uAC00'}
-                    </button>
+                    <div className="restaurant-search__card-actions">
+                      <SearchMapDropdown name={result.name} lat={result.lat} lng={result.lng} />
+                      <button
+                        className="restaurant-search__action-btn"
+                        onClick={() => handleFetchMenu(result)}
+                      >
+                        메뉴
+                      </button>
+                      <button
+                        className={`restaurant-search__card-add ${isAdded ? 'restaurant-search__card-add--added' : ''}`}
+                        onClick={() => handleSelect(result)}
+                        disabled={isAdded}
+                      >
+                        {isAdded ? '\uCD94\uAC00\uB428' : '+ \uCD94\uAC00'}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -443,12 +489,84 @@ export function RestaurantSearch({ onSelect, disabled, placeholder, existingIds 
         </div>
       )}
 
+      {/* Menu modal */}
+      {menuModal && (
+        <div className="restaurant-search__modal-overlay" onClick={() => setMenuModal(null)}>
+          <div className="restaurant-search__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="restaurant-search__modal-header">
+              <div>
+                <h3>{menuModal.name}</h3>
+                {menuModal.rating !== null && menuModal.rating > 0 && (
+                  <div className="restaurant-search__modal-rating">
+                    <span className="restaurant-search__modal-star">{'\u2605'}</span>
+                    <span className="restaurant-search__modal-score">{menuModal.rating.toFixed(2)}</span>
+                    {menuModal.reviewCount !== null && (
+                      <span className="restaurant-search__modal-reviews">
+                        (리뷰 {menuModal.reviewCount.toLocaleString()})
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setMenuModal(null)}>&times;</button>
+            </div>
+            {menuModal.loading && (
+              <div className="restaurant-search__modal-loading">
+                <div className="restaurant-search__spinner" />
+                <span>메뉴를 불러오는 중...</span>
+              </div>
+            )}
+            {menuModal.error && !menuModal.loading && (
+              <div className="restaurant-search__modal-error">{menuModal.error}</div>
+            )}
+            {menuModal.items.length > 0 && (
+              <ul className="restaurant-search__modal-menu">
+                {menuModal.items.map((item, i) => (
+                  <li key={i}>
+                    <span>{item.name}</span>
+                    <span>{item.price !== null ? new Intl.NumberFormat('ko-KR').format(item.price) + '원' : '-'}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Subway modal */}
       {showSubwayModal && (
         <SearchSubwayModal
           onSelect={handleSubwaySelect}
           onClose={() => setShowSubwayModal(false)}
         />
+      )}
+    </div>
+  );
+}
+
+function SearchMapDropdown({ name, lat, lng }: { name: string; lat: number; lng: number }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="restaurant-search__map-dropdown">
+      <button className="restaurant-search__action-btn" onClick={() => setOpen(!open)}>
+        지도
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points={open ? '18 15 12 9 6 15' : '6 9 12 15 18 9'} />
+        </svg>
+      </button>
+      {open && (
+        <div className="restaurant-search__map-popup">
+          <a className="restaurant-search__map-popup-item" href={`nmap://place?lat=${lat}&lng=${lng}&name=${encodeURIComponent(name)}&appname=com.lunchselect`} onClick={() => { setTimeout(() => { window.open(`https://map.naver.com/p/search/${encodeURIComponent(name)}`, '_blank'); }, 500); }}>
+            <span className="restaurant-search__map-dot restaurant-search__map-dot--naver">N</span>네이버지도
+          </a>
+          <a className="restaurant-search__map-popup-item" href={`kakaomap://look?p=${lat},${lng}`} onClick={() => { setTimeout(() => { window.open(`https://map.kakao.com/link/map/${encodeURIComponent(name)},${lat},${lng}`, '_blank'); }, 500); }}>
+            <span className="restaurant-search__map-dot restaurant-search__map-dot--kakao">K</span>카카오맵
+          </a>
+          <a className="restaurant-search__map-popup-item" href={`tmap://route?goalx=${lng}&goaly=${lat}&goalname=${encodeURIComponent(name)}`}>
+            <span className="restaurant-search__map-dot restaurant-search__map-dot--tmap">T</span>티맵
+          </a>
+        </div>
       )}
     </div>
   );

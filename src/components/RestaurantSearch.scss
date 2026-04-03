@@ -560,6 +560,210 @@
 
     &:disabled { opacity: 0.7; }
   }
+
+  // ── Action buttons (map, menu) ──
+  &__item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  &__card-actions {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  &__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      background: rgba(var(--color-primary-rgb), 0.04);
+    }
+  }
+
+  // ── Map dropdown ──
+  &__map-dropdown {
+    position: relative;
+  }
+
+  &__map-popup {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 20;
+    min-width: 130px;
+    animation: mapPopupIn 0.15s ease;
+  }
+
+  &__map-popup-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: background 0.1s;
+
+    &:hover {
+      background: rgba(var(--color-primary-rgb), 0.06);
+    }
+  }
+
+  &__map-dot {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    flex-shrink: 0;
+
+    &--naver { background: #1EC800; color: #fff; }
+    &--kakao { background: #FEE500; color: #3C1E1E; }
+    &--tmap { background: #EF4436; color: #fff; }
+  }
+
+  // ── Menu modal ──
+  &__modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  &__modal {
+    background: var(--color-surface);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  }
+
+  &__modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      &:hover { color: var(--color-text); }
+    }
+  }
+
+  &__modal-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    font-size: 0.82rem;
+  }
+
+  &__modal-star {
+    color: #FFB800;
+    font-size: 0.9rem;
+  }
+
+  &__modal-score {
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  &__modal-reviews {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+  }
+
+  &__modal-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2rem 1rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  &__modal-error {
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  &__modal-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(var(--color-border-rgb, 0, 0, 0), 0.05);
+
+      &:last-child { border-bottom: none; }
+
+      span:last-child {
+        color: var(--color-primary);
+        font-weight: 600;
+        white-space: nowrap;
+        margin-left: 0.5rem;
+      }
+    }
+  }
+}
+
+@keyframes mapPopupIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 // ── Pagination ──
