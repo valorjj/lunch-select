@@ -102,7 +102,7 @@ export function CoffeeRoulette({ participants: initialParticipants, groupId, onC
   return (
     <div className="coffee-roulette">
       <div className="coffee-roulette__header">
-        <h3 className="coffee-roulette__title">&#9749; &#45572;&#44032; &#49404;&#45208;?</h3>
+        <h3 className="coffee-roulette__title">☕ 누가 쏘나?</h3>
         <button className="coffee-roulette__close" onClick={onClose}>&times;</button>
       </div>
 

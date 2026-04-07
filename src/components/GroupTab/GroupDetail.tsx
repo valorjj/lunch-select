@@ -113,7 +113,7 @@ export function GroupDetail({ groupId, groupsHook, onBack }: GroupDetailProps) {
           />
         ) : (
           <button className="group-detail__coffee-btn" onClick={() => setShowRoulette(true)}>
-            &#9749; &#45572;&#44032; &#49404;&#45208;?
+            ☕ 누가 쏘나?
           </button>
         )}
       </div>
