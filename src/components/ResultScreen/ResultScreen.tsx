@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Restaurant, MenuItem } from '../../types/restaurant';
 import { SharePanel } from '../SharePanel/SharePanel';
+import { formatPrice } from '../../utils/format';
 import './ResultScreen.scss';
 
 interface StartingPointData {
@@ -16,11 +17,6 @@ interface ResultScreenProps {
   onRetry: () => void;
   onStartOver: () => void;
   onUpdateStartingPoint: (point: StartingPointData) => void;
-}
-
-function formatPrice(price: number | null): string {
-  if (price === null) return '-';
-  return new Intl.NumberFormat('ko-KR').format(price) + '원';
 }
 
 export function ResultScreen({

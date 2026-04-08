@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGroups, LunchGroup } from '../../hooks/useGroups';
+import './GroupList.scss';
 
 interface GroupListProps {
   groupsHook: ReturnType<typeof useGroups>;

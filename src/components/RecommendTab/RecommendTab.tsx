@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SearchResult } from '../../types/restaurant';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { MenuModal } from '../shared/MenuModal';
 import { SUBWAY_LINES } from '../../data/subwayLines';
 import { REGION_GROUPS } from '../../data/regions';
 import './RecommendTab.scss';
@@ -65,14 +66,7 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const [selectedRegion, setSelectedRegion] = useState(REGION_GROUPS[0].label);
-  const [menuModal, setMenuModal] = useState<{
-    name: string;
-    items: { name: string; price: number | null }[];
-    rating: number | null;
-    reviewCount: number | null;
-    loading: boolean;
-    error: string | null;
-  } | null>(null);
+  const [menuRestaurant, setMenuRestaurant] = useState<{ name: string; roadAddress?: string } | null>(null);
   const activeLocation = locationMode === 'gps' ? gpsLocation : selectedPreset;
 
   // Extract cuisine type from Kakao category string (e.g., "음식점 > 한식 > 찌개" → "한식")
@@ -124,24 +118,8 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
     }
   };
 
-  const handleFetchMenu = async (r: RecommendResult) => {
-    setMenuModal({ name: r.name, items: [], rating: null, reviewCount: null, loading: true, error: null });
-    try {
-      const apiUrl = `/api/place?name=${encodeURIComponent(r.name)}&address=${encodeURIComponent(r.roadAddress || r.address || '')}`;
-      const res = await fetch(apiUrl);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setMenuModal({
-        name: data.name || r.name,
-        items: data.menuItems || [],
-        rating: data.rating ?? null,
-        reviewCount: data.reviewCount ?? null,
-        loading: false,
-        error: data.menuItems?.length > 0 ? null : '\uB4F1\uB85D\uB41C \uBA54\uB274\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.',
-      });
-    } catch {
-      setMenuModal({ name: r.name, items: [], rating: null, reviewCount: null, loading: false, error: '\uBA54\uB274 \uC815\uBCF4\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.' });
-    }
+  const handleFetchMenu = (r: RecommendResult) => {
+    setMenuRestaurant({ name: r.name, roadAddress: r.roadAddress || r.address });
   };
 
   const handleShuffle = () => {
@@ -441,49 +419,7 @@ export function RecommendTab({ onSelect, existingIds }: RecommendTabProps) {
         </div>
       )}
 
-      {/* Menu modal */}
-      {menuModal && (
-        <div className="recommend-tab__modal-overlay" onClick={() => setMenuModal(null)}>
-          <div className="recommend-tab__modal" onClick={(e) => e.stopPropagation()}>
-            <div className="recommend-tab__modal-header">
-              <div>
-                <h3>{menuModal.name}</h3>
-                {menuModal.rating !== null && menuModal.rating > 0 && (
-                  <div className="recommend-tab__modal-rating">
-                    <span className="recommend-tab__modal-star">{'\u2605'}</span>
-                    <span className="recommend-tab__modal-score">{menuModal.rating.toFixed(2)}</span>
-                    {menuModal.reviewCount !== null && (
-                      <span className="recommend-tab__modal-reviews">
-                        ({'\uB9AC\uBDF0'} {menuModal.reviewCount.toLocaleString()})
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setMenuModal(null)}>&times;</button>
-            </div>
-            {menuModal.loading && (
-              <div className="recommend-tab__modal-loading">
-                <div className="recommend-tab__spinner" />
-                <span>{'\uBA54\uB274\uB97C \uBD88\uB7EC\uC624\uB294 \uC911...'}</span>
-              </div>
-            )}
-            {menuModal.error && !menuModal.loading && (
-              <div className="recommend-tab__modal-error">{menuModal.error}</div>
-            )}
-            {menuModal.items.length > 0 && (
-              <ul className="recommend-tab__modal-menu">
-                {menuModal.items.map((item, i) => (
-                  <li key={i}>
-                    <span>{item.name}</span>
-                    <span>{item.price !== null ? new Intl.NumberFormat('ko-KR').format(item.price) + '\uC6D0' : '-'}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
+      <MenuModal restaurant={menuRestaurant} onClose={() => setMenuRestaurant(null)} />
 
       {/* Subway station modal */}
       {showSubwayModal && (

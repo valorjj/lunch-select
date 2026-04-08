@@ -1,0 +1,103 @@
+.map-dropdown {
+  position: relative;
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+  }
+
+  &__popup {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 50;
+    min-width: 130px;
+    animation: map-dropdown-in 0.15s ease;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: background 0.1s;
+
+    &:hover {
+      background: rgba(var(--color-primary-rgb, 255, 107, 53), 0.06);
+    }
+  }
+
+  &__dot {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    flex-shrink: 0;
+
+    &--naver { background: #1EC800; color: #fff; }
+    &--kakao { background: #FEE500; color: #3C1E1E; }
+    &--tmap { background: #EF4436; color: #fff; }
+  }
+}
+
+@keyframes map-dropdown-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Inline map buttons (for result screens)
+.map-buttons {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+
+  &__app {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+
+    span {
+      font-weight: 800;
+      font-size: 0.72rem;
+    }
+
+    &--naver { background: #03C75A; }
+    &--kakao { background: #FEE500; color: #3C1E1E; span { color: #3C1E1E; } }
+    &--tmap { background: #E74C3C; }
+  }
+}

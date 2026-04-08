@@ -1,44 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiFetch } from '../utils/api';
+import {
+  PollRestaurant,
+  PollVoter,
+  PollSuggestion,
+  PollAttendee,
+  DailyPollData,
+  PollHistoryEntry,
+} from '../types/group';
 
-export interface PollRestaurant {
-  naverPlaceId: string;
-  name: string;
-  category: string;
-  thumbnail: string;
-  roadAddress: string;
-  lat: number;
-  lng: number;
-}
-
-export interface PollVoter {
-  id: number;
-  name: string;
-}
-
-export interface PollSuggestion {
-  id: number;
-  restaurant: PollRestaurant;
-  suggestedBy: PollVoter;
-  voteCount: number;
-  myVote: boolean;
-  voters: PollVoter[];
-}
-
-export interface PollAttendee {
-  id: number;
-  name: string;
-  profileImage: string | null;
-}
-
-export interface DailyPollData {
-  pollId: number;
-  date: string;
-  status: string;
-  suggestions: PollSuggestion[];
-  attendance: PollAttendee[];
-  amJoining: boolean;
-}
+export type { PollRestaurant, PollVoter, PollSuggestion, PollAttendee, DailyPollData, PollHistoryEntry };
 
 export function usePoll(groupId: number | null) {
   const [poll, setPoll] = useState<DailyPollData | null>(null);
@@ -114,6 +85,35 @@ export function usePoll(groupId: number | null) {
     }
   }, [groupId, fetchPoll]);
 
+  const finalize = useCallback(async (winnerId?: number) => {
+    if (!groupId) return false;
+    try {
+      const res = await apiFetch(`/api/groups/${groupId}/poll/today/finalize`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(winnerId ? { winnerId } : {}),
+      });
+      if (res.ok) {
+        await fetchPoll();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, [groupId, fetchPoll]);
+
+  const fetchHistory = useCallback(async (days: number = 7): Promise<PollHistoryEntry[]> => {
+    if (!groupId) return [];
+    try {
+      const res = await apiFetch(`/api/groups/${groupId}/poll/history?days=${days}`);
+      if (res.ok) return await res.json();
+      return [];
+    } catch {
+      return [];
+    }
+  }, [groupId]);
+
   return {
     poll,
     isLoading,
@@ -122,5 +122,7 @@ export function usePoll(groupId: number | null) {
     vote,
     unvote,
     toggleJoin,
+    finalize,
+    fetchHistory,
   };
 }

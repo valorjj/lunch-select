@@ -1,21 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/api';
+import { GroupMember, LunchGroup } from '../types/group';
 
-export interface GroupMember {
-  id: number;
-  name: string;
-  profileImage: string | null;
-  role: 'owner' | 'member';
-}
-
-export interface LunchGroup {
-  id: number;
-  name: string;
-  inviteCode: string;
-  isOwner: boolean;
-  createdAt: string;
-  members?: GroupMember[];
-}
+export type { GroupMember, LunchGroup };
 
 export function useGroups(isLoggedIn: boolean) {
   const [groups, setGroups] = useState<LunchGroup[]>([]);

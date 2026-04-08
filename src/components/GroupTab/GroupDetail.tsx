@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGroups, LunchGroup } from '../../hooks/useGroups';
-import { usePoll } from '../../hooks/usePoll';
+import { usePoll, PollHistoryEntry } from '../../hooks/usePoll';
 import { DailyPoll } from './DailyPoll';
 import { CoffeeRoulette } from '../CoffeeRoulette/CoffeeRoulette';
+import './GroupDetail.scss';
 
 interface GroupDetailProps {
   groupId: number;
@@ -17,6 +18,8 @@ export function GroupDetail({ groupId, groupsHook, onBack }: GroupDetailProps) {
   const [showMembers, setShowMembers] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showRoulette, setShowRoulette] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<PollHistoryEntry[]>([]);
   const pollHook = usePoll(groupId);
 
   const loadDetail = useCallback(async () => {
@@ -103,6 +106,42 @@ export function GroupDetail({ groupId, groupsHook, onBack }: GroupDetailProps) {
       )}
 
       <DailyPoll pollHook={pollHook} />
+
+      <button
+        className="group-detail__history-btn"
+        onClick={async () => {
+          if (!showHistory && history.length === 0) {
+            const data = await pollHook.fetchHistory(7);
+            setHistory(data);
+          }
+          setShowHistory(!showHistory);
+        }}
+      >
+        {showHistory ? '지난 기록 ▲' : '지난 기록 ▼'}
+      </button>
+
+      {showHistory && (
+        <div className="group-detail__history">
+          {history.length === 0 ? (
+            <div className="group-detail__history-empty">아직 기록이 없어요</div>
+          ) : (
+            <ul className="group-detail__history-list">
+              {history.map((entry, i) => {
+                const d = new Date(entry.date);
+                const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                const label = `${d.getMonth() + 1}/${d.getDate()} (${dayNames[d.getDay()]})`;
+                return (
+                  <li key={i} className="group-detail__history-item">
+                    <span className="group-detail__history-date">{label}</span>
+                    <span className="group-detail__history-name">{entry.restaurant.name}</span>
+                    <span className="group-detail__history-category">{entry.restaurant.category}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="group-detail__coffee-section">
         {showRoulette ? (

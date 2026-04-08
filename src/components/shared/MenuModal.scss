@@ -1,0 +1,122 @@
+.menu-modal {
+  background: var(--color-surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      &:hover { color: var(--color-text); }
+    }
+  }
+
+  &__rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    font-size: 0.82rem;
+  }
+
+  &__star {
+    color: #FFB800;
+    font-size: 0.9rem;
+  }
+
+  &__score {
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  &__reviews {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2rem 1rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  &__spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: menu-modal-spin 0.6s linear infinite;
+  }
+
+  &__error {
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  &__menu {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(var(--color-border-rgb, 0, 0, 0), 0.05);
+
+      &:last-child { border-bottom: none; }
+
+      span:last-child {
+        color: var(--color-primary);
+        font-weight: 600;
+        white-space: nowrap;
+        margin-left: 0.5rem;
+      }
+    }
+  }
+}
+
+@keyframes menu-modal-spin {
+  to { transform: rotate(360deg); }
+}

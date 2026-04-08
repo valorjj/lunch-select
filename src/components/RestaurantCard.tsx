@@ -1,5 +1,6 @@
 import React from 'react';
 import { Restaurant } from '../types/restaurant';
+import { formatPrice } from '../utils/format';
 import './RestaurantCard.scss';
 
 interface RestaurantCardProps {
@@ -8,11 +9,6 @@ interface RestaurantCardProps {
   index: number;
   isBookmarked?: boolean;
   onToggleBookmark?: (placeId: string, restaurant: Restaurant) => void;
-}
-
-function formatPrice(price: number | null): string {
-  if (price === null) return '-';
-  return new Intl.NumberFormat('ko-KR').format(price) + '원';
 }
 
 export function RestaurantCard({ restaurant, onRemove, index, isBookmarked, onToggleBookmark }: RestaurantCardProps) {
