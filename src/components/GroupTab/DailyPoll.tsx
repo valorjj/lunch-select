@@ -39,17 +39,18 @@ export function DailyPoll({ pollHook }: DailyPollProps) {
   // Phase state
   const [pollPhase, setPollPhase] = useState<PollPhase>('poll');
   const [winner, setWinner] = useState<Restaurant | null>(null);
+  const [userViewingPoll, setUserViewingPoll] = useState(false);
 
   // Menu modal
   const [menuRestaurant, setMenuRestaurant] = useState<{ name: string; roadAddress?: string } | null>(null);
 
-  // Show result if poll is already finalized on load
+  // Show result if poll is already finalized on initial load
   useEffect(() => {
-    if (poll?.status === 'finalized' && poll.winner && pollPhase === 'poll') {
+    if (poll?.status === 'finalized' && poll.winner && pollPhase === 'poll' && !userViewingPoll) {
       setWinner(pollToRestaurant(poll.winner));
       setPollPhase('result');
     }
-  }, [poll?.status, poll?.winner, pollPhase]);
+  }, [poll?.status, poll?.winner, pollPhase, userViewingPoll]);
 
   const handleSuggest = async (result: { id: string }) => {
     setIsSuggesting(true);
@@ -96,6 +97,7 @@ export function DailyPoll({ pollHook }: DailyPollProps) {
 
   const handleBackToPoll = useCallback(() => {
     setWinner(null);
+    setUserViewingPoll(true);
     setPollPhase('poll');
   }, []);
 
