@@ -296,19 +296,42 @@
 
   &__coffee-btn {
     width: 100%;
-    padding: 0.8rem;
+    padding: 1rem 1.25rem;
     border: 1px solid var(--color-border);
     border-radius: 12px;
     background: var(--color-surface);
-    font-size: 0.95rem;
-    font-weight: 700;
     font-family: inherit;
     color: var(--color-text);
     cursor: pointer;
     transition: border-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: left;
 
     &:hover {
       border-color: var(--color-primary);
     }
+  }
+
+  &__coffee-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+  }
+
+  &__coffee-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__coffee-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  &__coffee-desc {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 0.1rem;
   }
 }

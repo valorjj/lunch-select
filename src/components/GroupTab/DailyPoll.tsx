@@ -31,7 +31,7 @@ function pollToRestaurant(pr: PollRestaurant): Restaurant {
 }
 
 export function DailyPoll({ pollHook }: DailyPollProps) {
-  const { poll, isLoading, suggest, vote, unvote, toggleJoin, finalize } = pollHook;
+  const { poll, isLoading, suggest, vote, unvote, toggleJoin, finalize, fetchPoll } = pollHook;
   const [showSearch, setShowSearch] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -73,7 +73,9 @@ export function DailyPoll({ pollHook }: DailyPollProps) {
     // Auto-finalize: find the suggestion that matches the game winner
     if (poll) {
       const winningSuggestion = poll.suggestions.find(
-        s => s.restaurant.naverPlaceId === selected.naverPlaceId || s.restaurant.name === selected.name
+        s => s.restaurant.naverPlaceId === selected.id
+          || s.restaurant.naverPlaceId === selected.naverPlaceId
+          || s.restaurant.name === selected.name
       );
       if (winningSuggestion) {
         await finalize(winningSuggestion.id);
@@ -84,11 +86,9 @@ export function DailyPoll({ pollHook }: DailyPollProps) {
   const handleFinalize = async () => {
     setIsFinalizing(true);
     try {
-      const success = await finalize();
-      if (success && poll?.winner) {
-        setWinner(pollToRestaurant(poll.winner));
-        setPollPhase('result');
-      }
+      await finalize();
+      // finalize() calls fetchPoll() internally, which updates poll state
+      // The useEffect watching poll.status will auto-switch to result phase
     } finally {
       setIsFinalizing(false);
     }

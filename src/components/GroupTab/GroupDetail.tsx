@@ -110,7 +110,7 @@ export function GroupDetail({ groupId, groupsHook, onBack }: GroupDetailProps) {
       <button
         className="group-detail__history-btn"
         onClick={async () => {
-          if (!showHistory && history.length === 0) {
+          if (!showHistory) {
             const data = await pollHook.fetchHistory(7);
             setHistory(data);
           }
@@ -152,7 +152,11 @@ export function GroupDetail({ groupId, groupsHook, onBack }: GroupDetailProps) {
           />
         ) : (
           <button className="group-detail__coffee-btn" onClick={() => setShowRoulette(true)}>
-            ☕ 누가 쏘나?
+            <span className="group-detail__coffee-icon">☕</span>
+            <span className="group-detail__coffee-text">
+              <span className="group-detail__coffee-title">누가 쏘나?</span>
+              <span className="group-detail__coffee-desc">룰렛 돌려서 커피 쏘는 사람 정하기</span>
+            </span>
           </button>
         )}
       </div>
