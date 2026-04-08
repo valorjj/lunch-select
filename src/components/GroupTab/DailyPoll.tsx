@@ -31,7 +31,7 @@ function pollToRestaurant(pr: PollRestaurant): Restaurant {
 }
 
 export function DailyPoll({ pollHook }: DailyPollProps) {
-  const { poll, isLoading, suggest, vote, unvote, toggleJoin, finalize, fetchPoll } = pollHook;
+  const { poll, isLoading, suggest, vote, unvote, toggleJoin, finalize } = pollHook;
   const [showSearch, setShowSearch] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
